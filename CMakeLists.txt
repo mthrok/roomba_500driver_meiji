@@ -6,7 +6,6 @@ project(roomba_500driver_meiji)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   message_generation
-  message_runtime
   geometry_msgs
   sensor_msgs
   nav_msgs
@@ -98,7 +97,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES roomba_500driver_meiji
-  CATKIN_DEPENDS geometry_msgs nav_msgs roscpp sensor_msgs tf
+  CATKIN_DEPENDS geometry_msgs nav_msgs roscpp sensor_msgs tf message_runtime
   DEPENDS system_lib
 )
 
@@ -125,7 +124,9 @@ add_executable(test_roomba_500driver_meiji src/test_roomba_500driver_meiji.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-# add_dependencies(roomba_driver_node roomba_driver_generate_messages_cpp)
+add_dependencies(roomba_500driver_meiji 
+  roomba_500driver_meiji_generate_messages_cpp
+)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(test_roomba_500driver_meiji
