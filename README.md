@@ -13,7 +13,8 @@ Adaptation of original [roomba_500driver_meiji](http://en.osdn.jp/projects/meiji
 
 # Note 
 You can use this repository (together with [roomba_teleop_meiji](https://github.com/mthrok/roomba_teleop_meiji)) to control not only roomba 500 series 
-but also roomba 600 series and iRobot Create 2. The API, however is not updated, and which means only 
+but also roomba 600 series and iRobot Create 2. (I have only tested with iRobot Create 2). 
+The API, however is not updated, and which means only 
 functionalities common to both 500 series and 600 series are currently available.
 
 For the difference of 500 series and 600 series, 
