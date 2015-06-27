@@ -120,16 +120,16 @@ add_library(roomba_500driver_meiji
 )
 
 ## Declare a cpp executable
-add_executable(test_roomba_500driver_meiji src/test_roomba_500driver_meiji.cpp)
+add_executable(roomba_500driver_meiji_node src/roomba_500driver_meiji.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-add_dependencies(roomba_500driver_meiji 
+add_dependencies(roomba_500driver_meiji
   roomba_500driver_meiji_generate_messages_cpp
 )
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(test_roomba_500driver_meiji
+target_link_libraries(roomba_500driver_meiji_node
   roomba_500driver_meiji
   ${catkin_LIBRARIES}
 )
