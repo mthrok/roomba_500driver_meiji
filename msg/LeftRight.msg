@@ -1,2 +1,0 @@
-bool left
-bool right

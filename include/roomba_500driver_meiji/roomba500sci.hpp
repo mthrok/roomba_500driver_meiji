@@ -70,6 +70,7 @@ class roombaSci {
   // "iRobot® Roomba® Serial Command Interface (SCI) Specification"
   // http://www.ecsl.cs.sunysb.edu/mint/Roomba_SCI_Spec_Manual.pdf
 
+  // Main Operation Codes
   enum OPCODE {
     OC_RESET = 7,
     OC_START = 128,
@@ -106,22 +107,21 @@ class roombaSci {
 
     OC_STOP = 173,
   };
-
+  // Data bytes for operation codes
   enum BAUD_CODE {
-    BC_300 = 0,
-    BC_600 = 1,
-    BC_1200 = 2,
-    BC_2400 = 3,
-    BC_4800 = 4,
-    BC_9600 = 5,
-    BC_14400 = 6,
-    BC_19200 = 7,
-    BC_28800 = 8,
-    BC_38400 = 9,
-    BC_57600 =10,
-    BC_115200 =11
+    BC_300    = 0,
+    BC_600    = 1,
+    BC_1200   = 2,
+    BC_2400   = 3,
+    BC_4800   = 4,
+    BC_9600   = 5,
+    BC_14400  = 6,
+    BC_19200  = 7,
+    BC_28800  = 8,
+    BC_38400  = 9,
+    BC_57600  = 10,
+    BC_115200 = 11
   };
-
   enum DAY_BITS {
     DB_SUNDAY    = 0x01,
     DB_MONDAY    = 0x02,
@@ -131,17 +131,15 @@ class roombaSci {
     DB_FRIDAY    = 0x20,
     DB_SATURDAY  = 0x40,
   };
-
   enum DAY_CODE {
-    DC_SUNDAY = 0,
-    DC_MONDAY = 1,
-    DC_TUESDAY = 2,
+    DC_SUNDAY    = 0,
+    DC_MONDAY    = 1,
+    DC_TUESDAY   = 2,
     DC_WEDNESDAY = 3,
-    DC_THURSDAY = 4,
-    DC_FRIDAY = 5,
-    DC_SATURDAY = 6
+    DC_THURSDAY  = 4,
+    DC_FRIDAY    = 5,
+    DC_SATURDAY  = 6
   };
-
   enum MOTOR_STATE_BITS {
     MB_SIDE_BRUSH     = 0x01,
     MB_VACUUM         = 0x02,
@@ -149,26 +147,28 @@ class roombaSci {
     MB_SIDE_BRUSH_CW  = 0x08,
     MB_MAIN_BRUSH_DIR = 0x10
   };
-
   enum LED_BITS {
     LB_CHECK_ROBOT = 0x08,
     LB_DOCK        = 0x04,
     LB_SPOT        = 0x02,
     LB_DEBRIS      = 0x01
   };
-
-  enum WEEKDAY_LED_BITS {
-    // TODO
-  };
-
   enum SCHEDULING_LED_BITS {
-    // TODO
+    SLB_COLON    = 0x01,
+    SLB_PM       = 0x02,
+    SLB_AM       = 0x04,
+    SLB_CLOCK    = 0x08,
+    SLB_SCHEDULE = 0x10,
   };
-
   enum DIGIT_N_BITS {
-    // TODO
+    DNB_A = 0x01,
+    DNB_B = 0x02,
+    DNB_C = 0x04,
+    DNB_D = 0x08,
+    DNB_E = 0x10,
+    DNB_F = 0x20,
+    DNB_G = 0x40
   };
-
   enum BUTTONS_BITS {
     BB_CLEAN    = 0x01,
     BB_SPOT     = 0x02,
@@ -179,15 +179,177 @@ class roombaSci {
     BB_SCHEDULE = 0x40,
     BB_CLOCK    = 0x80,
   };
-
-  enum LED_ASCII {
-    // TODO
+  enum LED_ASCII_CODE {
+    LAC_SPACE = 32,
+    LAC_EXCLAMATION,
+    LAC_DOUBLE_QUOTE,
+    LAC_SHARP,
+    LAC_PERCENT = 37,
+    LAC_AMPERSAND,
+    LAC_RIGHT_SINGLE_QUOTE,
+    LAC_COMMA = 44,
+    LAC_HYPHEN,
+    LAC_PERIOD,
+    LAC_SLASH ,
+    LAC_0,
+    LAC_1,
+    LAC_2,
+    LAC_3,
+    LAC_4,
+    LAC_5,
+    LAC_6,
+    LAC_7,
+    LAC_8,
+    LAC_9,
+    LAC_COLON,
+    LAC_SEMICOLON,
+    LAC_INV_EXCLAMATION,
+    LAC_EQUAL,
+    LAC_INV_QUESTION,
+    LAC_QUESTION,
+    LAC_A = 65,
+    LAC_B,
+    LAC_C,
+    LAC_D,
+    LAC_E,
+    LAC_F,
+    LAC_G,
+    LAC_H,
+    LAC_I,
+    LAC_J,
+    LAC_K,
+    LAC_L,
+    LAC_M,
+    LAC_N,
+    LAC_O,
+    LAC_P,
+    LAC_Q,
+    LAC_R,
+    LAC_S,
+    LAC_T,
+    LAC_U,
+    LAC_V,
+    LAC_W,
+    LAC_X,
+    LAC_Y,
+    LAC_Z,
+    LAC_OPEN_BRACKET,
+    LAC_BACKSLASH,
+    LAC_CLOSE_BRACKET,
+    LAC_CIRCUMFLEX,
+    LAC_UNDERSCORE,
+    LAC_LEFT_SINGLE_QUOTE,
+    LAC_a,
+    LAC_b,
+    LAC_c,
+    LAC_d,
+    LAC_e,
+    LAC_f,
+    LAC_g,
+    LAC_h,
+    LAC_i,
+    LAC_j,
+    LAC_k,
+    LAC_l,
+    LAC_m,
+    LAC_n,
+    LAC_o,
+    LAC_p,
+    LAC_q,
+    LAC_r,
+    LAC_s,
+    LAC_t,
+    LAC_u,
+    LAC_v,
+    LAC_w,
+    LAC_x,
+    LAC_y,
+    LAC_z,
+    LAC_LEFT_BRACE,
+    LAC_DASH,
+    LAC_RIGHT_BRACE,
+    LAC_TILDE
   };
-
   enum SONG_NOTE {
-    // TODO
+    NOTE_G1  = 31,
+    NOTE_GS1,
+    NOTE_A1,
+    NOTE_AS1,
+    NOTE_B1,
+    NOTE_C1,
+    NOTE_CS1,
+    NOTE_D1,
+    NOTE_DS1,
+    NOTE_E1,
+    NOTE_F1,
+    NOTE_FS1,
+    NOTE_G2 = 43,
+    NOTE_GS2,
+    NOTE_A2,
+    NOTE_AS2,
+    NOTE_B2,
+    NOTE_C2,
+    NOTE_CS2,
+    NOTE_D2,
+    NOTE_DS2,
+    NOTE_E2,
+    NOTE_F2,
+    NOTE_FS2,
+    NOTE_G3 = 55,
+    NOTE_GS3,
+    NOTE_A3,
+    NOTE_AS3,
+    NOTE_B3,
+    NOTE_C3,
+    NOTE_CS3,
+    NOTE_D3,
+    NOTE_DS3,
+    NOTE_E3,
+    NOTE_F3,
+    NOTE_FS3,
+    NOTE_G4 = 67,
+    NOTE_GS4,
+    NOTE_A4,
+    NOTE_AS4,
+    NOTE_B4,
+    NOTE_C4,
+    NOTE_CS4,
+    NOTE_D4,
+    NOTE_DS4,
+    NOTE_E4,
+    NOTE_F4,
+    NOTE_FS4,
+    NOTE_G5 = 79,
+    NOTE_GS5,
+    NOTE_A5,
+    NOTE_AS5,
+    NOTE_B5,
+    NOTE_C5,
+    NOTE_CS5,
+    NOTE_D5,
+    NOTE_DS5,
+    NOTE_E5,
+    NOTE_F5,
+    NOTE_FS5,
+    NOTE_G6 = 91,
+    NOTE_GS6,
+    NOTE_A6,
+    NOTE_AS6,
+    NOTE_B6,
+    NOTE_C6,
+    NOTE_CS6,
+    NOTE_D6,
+    NOTE_DS6,
+    NOTE_E6,
+    NOTE_F6,
+    NOTE_FS6,
+    NOTE_G7 = 103,
+    NOTE_GS7,
+    NOTE_A7,
+    NOTE_AS7,
+    NOTE_B7,
   };
-
+  // SENSOR PACKET DIFINITIONS
   enum PACKET_ID {
     GROUP_0 = 0,
     GROUP_1 = 1,
@@ -201,58 +363,18 @@ class roombaSci {
     GROUP_107  = 107,
     ALL_PACKET = 100
   };
-
-  enum PACKET_CODE {
-    PC_0 = 0,
-    PC_1 = 1,
-    PC_2 = 2,
-    PC_3 = 3,
-  };
-
   enum BUMPS_WHEELDROPS {
     BUMP_RIGHT       = 0x01,
     BUMP_LEFT        = 0x02,
     WHEELDROP_RIGHT  = 0x04,
     WHEELDROP_LEFT   = 0x08
   };
-
-  enum WALL {
-    NO_WALL=0,
-    WALL_SEEN=1
-  };
-
-  enum CLIRFF_LEFT {
-    NO_CLIFF_LEFT = 0,
-    CLIFF_LEFT    = 1
-  };
-
-  enum CLIRFF_FRONT_LEFT {
-    NO_CLIFF_FRONT_LEFT = 0,
-    CLIFF_FRONT_LEFT = 1
-  };
-
-  enum CLIRFF_FRONT_RIGHT {
-    NO_CLIFF_FRONT_RIGHT = 0,
-    CLIFF_FRONT_RIGHT = 1
-  };
-
-  enum CLIRFF_RIGHT {
-    NO_CLIFF_RIGHT = 0,
-    CLIFF_RIGHT = 1
-  };
-
-  enum VWALL {
-    NO_VWALL = 0,
-    VWALL_SEEN = 1
-  };
-
   enum WHEEL_OVERCURRENT {
-    SIDE_BRUSH = 0x01,
-    MAIN_BRUSH = 0x04,
+    SIDE_BRUSH  = 0x01,
+    MAIN_BRUSH  = 0x04,
     RIGHT_WHEEL = 0x08,
-    LEFT_WHEEL = 0x16
+    LEFT_WHEEL  = 0x16
   };
-
   enum CHARGING_STATE_CODES {
     NOT_CHARGING      = 0,
     CHARGING_RECOVERY = 1,
@@ -261,54 +383,30 @@ class roombaSci {
     WAITING           = 4,
     CHARGING_ERROR    = 5
   };
-
   enum CHARGIN_SOURCES_AVAILABLE {
     HOME_BASE        = 0x02,
     INTERNAL_CHARGER = 0x01
   };
-
   enum OI_MODE {
-    OFF = 0,
+    OFF     = 0,
     PASSIVE = 1,
-    SAFE = 2,
-    FULL = 3
+    SAFE    = 2,
+    FULL    = 3
   };
-
   enum LIGHT_BUMPER {
-    LT_BUMBER_LEFT         = 0x01,
-    LT_BUMBER_FRONT_LEFT   = 0x02,
-    LT_BUMBER_CENTER_LEFT  = 0x04,
-    LT_BUMBER_CENTER_RIGHT = 0x08,
-    LT_BUMBER_FRONT_RIGHT  = 0x10,
-    LT_BUMBER_RIGHT        = 0x20,
+    LT_BUMPER_LEFT         = 0x01,
+    LT_BUMPER_FRONT_LEFT   = 0x02,
+    LT_BUMPER_CENTER_LEFT  = 0x04,
+    LT_BUMPER_CENTER_RIGHT = 0x08,
+    LT_BUMPER_FRONT_RIGHT  = 0x10,
+    LT_BUMPER_RIGHT        = 0x20,
   };
-
   enum OVERCURRENT_BITS {
     OCB_SIDE_BRUSH  = 0x01,
     OCB_MAIN_BRUSH  = 0x02,
     OCB_RIGHT_WHEEL = 0x04,
     OCB_LEFT_WHEEL  = 0x08
   };
-  /* Not found in Create2 manual. To be checked with older manuals
-  enum MOTOR{MOTOR_ON=1, MOTOR_OFF=0};
-
-  enum REMOTE_CC{NO_REMOTE=255};
-
-  enum MOTOR_OVERCURRENTS {
-    DRIVE_LEFT  = 0x10,
-    DRIVE_RIGHT = 0x08,
-    MAIN_BRUSH  = 0x04,
-    VACUUM      = 0x02,
-    SIDE_BRUSH  = 0x01
-  };
-
-  enum BUTTONS {
-    B_POWER = 0x08,
-    B_SPOT  = 0x04,
-    B_CLEAN = 0x02,
-    B_MAX   = 0x01
-  };
-  */
 
   roombaSci(int baud=B115200, const char* dev="/dev/ttyUSB0");
   ~roombaSci();

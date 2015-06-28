@@ -1,0 +1,2 @@
+bool home_base
+bool internal_charger

@@ -116,8 +116,7 @@ void printSensors(const roomba_500driver_meiji::Roomba500State& sens) {
        << (bool)sens.bump.left << endl;
   cout << "wheeldrops : "
        << (bool)sens.wheeldrop.right << "  "
-       << (bool)sens.wheeldrop.left << "  "
-       << (bool)sens.wheeldrop.caster << endl;
+       << (bool)sens.wheeldrop.left << endl;
   cout << "wall : " << (bool)sens.wall << endl;
   cout <<"cliff : "
        << (bool)sens.cliff.left << " "
@@ -226,7 +225,6 @@ int main(int argc, char** argv) {
     pre_enc_l=roomba->dEncoderLeft();
 
     //since all odometry is 6DOF we'll need a quaternion created from yaw
-    //ROSのOdometryには，6DOFを利用するのでyaw角から生成したquaternionを用いる
     geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(pose.theta);
 
     //first, we'll publish the transform over tf

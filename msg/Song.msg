@@ -1,3 +1,2 @@
-int8 number
-int8 playing
-
+uint8 number
+uint8 playing
