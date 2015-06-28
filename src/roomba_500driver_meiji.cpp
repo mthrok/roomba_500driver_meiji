@@ -109,52 +109,52 @@ void cntl_callback(const roomba_500driver_meiji::RoombaCtrlConstPtr& msg){
 void printSensors(const roomba_500driver_meiji::Roomba500State& sens) {
   cout<<"\n\n-------------------"<<endl;
   cout << "Bumps:\n  "
-       << sens.bumps_wheeldrops.bump_right ? "Right, " : ""
-       << sens.bumps_wheeldrops.bump_left  ? "Left" : "" << endl;
+       << (sens.bumps_wheeldrops.bump_right ? "Right, " : "")
+       << (sens.bumps_wheeldrops.bump_left  ? "Left" : "") << endl;
   cout << "Wheeldrops:\n "
-       << sens.bumps_wheeldrops.wheeldrop_right ? "Right, " : ""
-       << sens.bumps_wheeldrops.wheeldrop_left  ? "Left" : "" << endl;
+       << (sens.bumps_wheeldrops.wheeldrop_right ? "Right, " : "")
+       << (sens.bumps_wheeldrops.wheeldrop_left  ? "Left" : "") << endl;
   cout << "Wall:\n  "
-       << sens.wall.wall ? "Wall, " : ""
-       << sens.wall.vwall ? "Virtual Wall" : "" << endl;
+       << (sens.wall.wall ? "Wall, " : "")
+       << (sens.wall.vwall ? "Virtual Wall" : "") << endl;
   cout <<"Cliff:\n  "
-       << sens.cliff.left ? "Left, " : ""
-       << sens.cliff.front_left ? "Front Left, " : ""
-       << sens.cliff.right ? "Right, " : ""
-       << sens.cliff.front_right ? "Front Right " : "" << endl;
+       << (sens.cliff.left ? "Left, " : "")
+       << (sens.cliff.front_left ? "Front Left, " : "")
+       << (sens.cliff.right ? "Right, " : "")
+       << (sens.cliff.front_right ? "Front Right " : "") << endl;
   cout << "Wheel Overcurrent:\n  "
-       << sens.wheel_overcurrents.side_brush ? "Side Brush, " : ""
-       << sens.wheel_overcurrents.main_brush ? "Main Brush, " : ""
-       << sens.wheel_overcurrents.right_wheel ? "Right Wheel, " : ""
-       << sens.wheel_overcurrents.drive_left ? "Left Wheel" : "" << endl;
+       << (sens.wheel_overcurrents.side_brush ? "Side Brush, " : "")
+       << (sens.wheel_overcurrents.main_brush ? "Main Brush, " : "")
+       << (sens.wheel_overcurrents.right_wheel ? "Right Wheel, " : "")
+       << (sens.wheel_overcurrents.left_wheel ? "Left Wheel" : "") << endl;
   cout << "Dirt Detection:  " << sens.dirt_detect << endl;
   cout << "IR Character:"
        << "\n  Right: " << sens.ir_char.right
        << "\n  Left: "  << sens.ir_char.left
        << "\n  Omni: "  << sens.ir_char.omni << endl;
   cout << "Buttons:\n  "
-       << sens.button.clean    ? "Clean, " : ""
-       << sens.button.spot     ? "Spot, " : ""
-       << sens.button.dock     ? "Dock, " : ""
-       << sens.button.minute   ? "Minute, " : ""
-       << sens.button.hour     ? "Hour, " : ""
-       << sens.button.day      ? "Day, " : ""
-       << sens.button.clock    ? "Clock, " : ""
-       << sens.button.schedule ? "Schedule" : ""  << endl;
+       << (sens.button.clean    ? "Clean, " : "")
+       << (sens.button.spot     ? "Spot, " : "")
+       << (sens.button.dock     ? "Dock, " : "")
+       << (sens.button.minute   ? "Minute, " : "")
+       << (sens.button.hour     ? "Hour, " : "")
+       << (sens.button.day      ? "Day, " : "")
+       << (sens.button.clock    ? "Clock, " : "")
+       << (sens.button.schedule ? "Schedule" : "") << endl;
   cout << "Travel:"
        << "\n  Distance: " << sens.travel.distance << "[mm?]"
        << "\n  Angle: " << sens.travel.angle << "[rad?]" << endl;
   cout << "Battery:"
-       << "\n  Charging State: " << sens.battery.charging_state
+       << "\n  Charging State: " << (uint)sens.battery.charging_state
        << "\n  Voltage: " << sens.battery.voltage
        << "\n  Current: " << sens.battery.current
-       << "\n  Temperature: " << sens.battery.temperature
+       << "\n  Temperature: " << (int) sens.battery.temperature
        << "\n  Chage: " << sens.battery.charge
        << "\n  Capacity: " << sens.battery.capacity << endl;
   cout << "Charge Surce:\n  "
-       << sens.charging_source.home_base ? "Home Base, " : ""
-       << sens.charging_source.internal_charger ? "Internal Charger." : "" << endl;
-  cout << "OI Mode : " << sens.oi_mode << endl;
+       << (sens.charging_source.home_base ? "Home Base, " : "")
+       << (sens.charging_source.internal_charger ? "Internal Charger." : "") << endl;
+  cout << "OI Mode : " << (int)sens.oi_mode << endl;
   cout << "Song:"
        << "\n  Numer:   " << sens.song.number
        << "\n  Playing: " << sens.song.playing << endl;
@@ -168,23 +168,23 @@ void printSensors(const roomba_500driver_meiji::Roomba500State& sens) {
        << "\n  Left : " << sens.encoder_counts.left << endl;
   cout << "Light Bumper: "
        << "\n  Left: " << sens.light_bumper.left_signal
-       << ", " << sens.light_bumper.left ? "Hit" : "Not Hit"
+       << ", " << (sens.light_bumper.left ? "Hit" : "Not Hit")
        << "\n  Right: " << sens.light_bumper.right_signal
-       << ", " << sens.light_bumper.right ? "Hit" : "Not Hit"
+       << ", " << (sens.light_bumper.right ? "Hit" : "Not Hit")
        << "\n  Front Left: " << sens.light_bumper.front_left_signal
-       << ", " << sens.light_bumper.front_left ? "Hit" : "Not Hit"
+       << ", " << (sens.light_bumper.front_left ? "Hit" : "Not Hit")
        << "\n  Front Right: " << sens.light_bumper.front_right_signal
-       << ", " << sens.light_bumper.front_right ? "Hit" : "Not Hit"
+       << ", " << (sens.light_bumper.front_right ? "Hit" : "Not Hit")
        << "\n  Center Left: " << sens.light_bumper.center_left_signal
-       << ", " << sens.light_bumper.center_left ? "Hit" : "Not Hit"
+       << ", " << (sens.light_bumper.center_left ? "Hit" : "Not Hit")
        << "\n  Center Right: " << sens.light_bumper.center_right_signal
-       << ", " << sens.light_bumper.center_right ? "Hit" : "Not Hit" << endl;
+       << ", " << (sens.light_bumper.center_right ? "Hit" : "Not Hit") << endl;
   cout << "Motor Current:"
        << "\n  Left Wheel: " << sens.motor_current.left_wheel
        << "\n  Right Wheel: " << sens.motor_current.right_wheel
        << "\n  Main Brush: " << sens.motor_current.main_brush
        << "\n  Side Brush: " << sens.motor_current.side_brush << endl;
-  cout << "Stasis: " << sens.stasis ? "Forward" : "Not Forward" << endl;
+  cout << "Stasis: " << (sens.stasis ? "Forward" : "Not Forward") << endl;
 }
 
 double piToPI(double rad) {
@@ -234,15 +234,14 @@ int main(int argc, char** argv) {
 
     roomba_500driver_meiji::Roomba500State sens;
     sens.header.stamp=ros::Time::now();
-
     {
       boost::mutex::scoped_lock(cntl_mutex_);
       roomba->getSensors(sens);
     }
     printSensors(sens);
 
-    int enc_r=roomba->dEncoderRight();
-    int enc_l=roomba->dEncoderLeft();
+    int enc_r = roomba->dEncoderRight();
+    int enc_l = roomba->dEncoderLeft();
     if(abs(enc_r) == 200)
       enc_r = pre_enc_r;
     if(abs(enc_l) == 200)
@@ -251,8 +250,8 @@ int main(int argc, char** argv) {
     geometry_msgs::Pose2D pre=pose;
     float distance = (float)((float)enc_r + (float)enc_l) / 2270.0 * 0.5;
     float angle    = (float)((float)enc_r - (float)enc_l) / 2270.0 / 0.235;
-    sens.distance=(short)(1000 * distance);
-    sens.angle=(short)(angle * 180.0 / M_PI);
+    //sens.travel.distance=(short)(1000 * distance);
+    //sens.travel.angle=(short)(angle * 180.0 / M_PI);
 
     pub_state.publish(sens);
     calcOdometry(pose, pre, distance, angle);

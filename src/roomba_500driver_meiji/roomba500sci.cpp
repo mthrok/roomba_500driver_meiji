@@ -21,6 +21,9 @@
 
 #include <iostream>
 #include <cmath>
+
+typedef unsigned short uint16;
+typedef unsigned char uint8;
 using namespace std;
 
 roombaSci::roombaSci(int baud, const char* dev)
@@ -86,30 +89,30 @@ void roombaSci::max() {
 }
 
 void roombaSci::dock() {
-  const unsigned char seq[] = {OC_BUTTONS, roombaSci::BB_DOCK};
+  const uint8 seq[] = {OC_BUTTONS, roombaSci::BB_DOCK};
   ser_ -> write(seq,2);
   time_ -> sleep(COMMAND_WAIT);
 }
 
 void roombaSci::driveMotors(roombaSci::MOTOR_STATE_BITS state) {
-  const unsigned char seq[] = {OC_MOTORS, state};
+  const uint8 seq[] = {OC_MOTORS, state};
   ser_ -> write(seq,2);
   time_ -> sleep(COMMAND_WAIT);
 }
 
 void roombaSci::seekDock() {
-  const unsigned char seq[] = {OC_SEEK_DOCK};
+  const uint8 seq[] = {OC_SEEK_DOCK};
   ser_ -> write(seq,1);
   time_ -> sleep(COMMAND_WAIT);
 }
 
 void roombaSci::drive(short velocity, short radius) {
-  unsigned char vhi = (unsigned char)(velocity >> 8);
-  unsigned char vlo = (unsigned char)(velocity & 0xff);
-  unsigned char rhi = (unsigned char)(radius >> 8);
-  unsigned char rlo = (unsigned char)(radius & 0xff);
+  uint8 vhi = (uint8)(velocity >> 8);
+  uint8 vlo = (uint8)(velocity & 0xff);
+  uint8 rhi = (uint8)(radius >> 8);
+  uint8 rlo = (uint8)(radius & 0xff);
 
-  const unsigned char seq[] = {OC_DRIVE, vhi, vlo, rhi, rlo};
+  const uint8 seq[] = {OC_DRIVE, vhi, vlo, rhi, rlo};
   ser_ -> write(seq, 5);
   time_ -> sleep(COMMAND_WAIT);
 }
@@ -118,12 +121,12 @@ void roombaSci::driveDirect(float velocity, float yawrate) {
   short right = 1000 * (velocity + 0.5 * 0.235 * yawrate);
   short left = 1000 * (velocity - 0.5 * 0.235 * yawrate);
 
-  unsigned char rhi = (unsigned char)(right >> 8);
-  unsigned char rlo = (unsigned char)(right & 0xff);
-  unsigned char lhi = (unsigned char)(left  >> 8);
-  unsigned char llo = (unsigned char)(left  & 0xff);
+  uint8 rhi = (uint8)(right >> 8);
+  uint8 rlo = (uint8)(right & 0xff);
+  uint8 lhi = (uint8)(left  >> 8);
+  uint8 llo = (uint8)(left  & 0xff);
 
-  const unsigned char seq[] = {OC_DRIVE_DIRECT, rhi, rlo, lhi, llo};
+  const uint8 seq[] = {OC_DRIVE_DIRECT, rhi, rlo, lhi, llo};
   ser_ -> write(seq, 5);
   time_ -> sleep(COMMAND_WAIT);
 }
@@ -132,12 +135,12 @@ void roombaSci::drivePWM(int right_pwm, int left_pwm) {
   short right = 255.0 / 100.0 * right_pwm;
   short left = 255.0 / 100.0 * left_pwm;
 
-  unsigned char rhi = (unsigned char)(right >> 8);
-  unsigned char rlo = (unsigned char)(right & 0xff);
-  unsigned char lhi = (unsigned char)(left >> 8);
-  unsigned char llo = (unsigned char)(left & 0xff);
+  uint8 rhi = (uint8)(right >> 8);
+  uint8 rlo = (uint8)(right & 0xff);
+  uint8 lhi = (uint8)(left >> 8);
+  uint8 llo = (uint8)(left & 0xff);
 
-  const unsigned char seq[] = {OC_DRIVE_PWM, rhi, rlo, lhi, llo};
+  const uint8 seq[] = {OC_DRIVE_PWM, rhi, rlo, lhi, llo};
   ser_ -> write(seq,5);
   time_ -> sleep(COMMAND_WAIT);
 }
@@ -152,23 +155,23 @@ float roombaSci::velToPWM(float velocity) {
 }
 
 void roombaSci::song(int song_number, int song_length) {
-  const unsigned char mode_seq[] = {OC_SAFE};
+  const uint8 mode_seq[] = {OC_SAFE};
   ser_ -> write(mode_seq, 1);
   time_ -> sleep(COMMAND_WAIT);
 
-  const unsigned char command_seq[] = {OC_SONG, song_number, song_length, 60, 126};
+  const uint8 command_seq[] = {OC_SONG, song_number, song_length, 60, 126};
   ser_ -> write(command_seq,2*song_length+3);
   time_ -> sleep(COMMAND_WAIT);
 }
 
 void roombaSci::playing(int song_number) {
-  const unsigned char command_seq[] = {OC_PLAY, song_number};
+  const uint8 command_seq[] = {OC_PLAY, song_number};
   ser_ -> write(command_seq,2);
   time_ -> sleep(COMMAND_WAIT);
 }
 
 int roombaSci::sendOPCODE(roombaSci::OPCODE oc) {
-  const unsigned char uc = (unsigned char)oc;
+  const uint8 uc = (uint8)oc;
   int ret = ser_ -> write(&uc,1);
   time_ -> sleep(COMMAND_WAIT);
   return ret;
@@ -178,12 +181,12 @@ int roombaSci::receive(void) {
   return ser_ -> read(packet_, 80);
 }
 
-int roombaSci::receive(unsigned char* pack, int byte) {
+int roombaSci::receive(uint8* pack, int byte) {
   return ser_ -> read(pack, byte);
 }
 
 int roombaSci::getSensors(roomba_500driver_meiji::Roomba500State& sensor) {
-  const unsigned char seq[] = {OC_SENSORS, ALL_PACKET};
+  const uint8 seq[] = {OC_SENSORS, ALL_PACKET};
   int ret = ser_ -> write(seq, 2);
   time_ -> sleep(COMMAND_WAIT);
 
@@ -198,21 +201,21 @@ int roombaSci::getSensors(roomba_500driver_meiji::Roomba500State& sensor) {
 }
 
 void roombaSci::packetToStruct(roomba_500driver_meiji::Roomba500State& ret,
-			       const unsigned char* pack) {
+			       const uint8* pack) {
   // Bumps and Wheel Drops
-  ret.bumps_wheeldrops.bump_right = (bool)(pack[0] & BUMP_RIGHT);
-  ret.bumps_wheeldrops.bump_left  = (bool)(pack[0] & BUMP_LEFT);
+  ret.bumps_wheeldrops.bump_right      = (bool)(pack[0] & BUMP_RIGHT);
+  ret.bumps_wheeldrops.bump_left       = (bool)(pack[0] & BUMP_LEFT);
   ret.bumps_wheeldrops.wheeldrop_right = (bool)(pack[0] & WHEELDROP_RIGHT);
   ret.bumps_wheeldrops.wheeldrop_left  = (bool)(pack[0] & WHEELDROP_LEFT);
   // Wall
-  ret.wall.wall = (bool)(pack[1]);
+  ret.wall.wall         = (bool)(pack[1] & 0x01);
   // Cliff
   ret.cliff.left        = (bool)(pack[2] & 0x01);
   ret.cliff.front_left  = (bool)(pack[3] & 0x01);
   ret.cliff.front_right = (bool)(pack[4] & 0x01);
   ret.cliff.right       = (bool)(pack[5] & 0x01);
   // Vertial Wall
-  ret.wall.vwall = (bool)(pack[6] & 0x01);
+  ret.wall.vwall        = (bool)(pack[6] & 0x01);
   // Wheel Overcurrents
   ret.wheel_overcurrents.left_wheel  = (bool)(pack[7] & LEFT_WHEEL);
   ret.wheel_overcurrents.right_wheel = (bool)(pack[7] & RIGHT_WHEEL);
@@ -240,18 +243,18 @@ void roombaSci::packetToStruct(roomba_500driver_meiji::Roomba500State& ret,
   ret.travel.angle    = *((signed short*) (pack + 16));
   // Battery Charging state, Voltage, Current, Temperature, Charge, Capacity
   ret.battery.charging_state = pack[18];
-  ret.battery.voltage     = *((unsigned short*) (pack + 19));
+  ret.battery.voltage     = *((uint16*) (pack + 19));
   ret.battery.current     = *((signed short*)   (pack + 21));
   ret.battery.temperature = *((signed char*)    (pack + 23));
-  ret.battery.charge      = *((unsigned short*) (pack + 24));
-  ret.battery.capacity    = *((unsigned short*) (pack + 26));
+  ret.battery.charge      = *((uint16*) (pack + 24));
+  ret.battery.capacity    = *((uint16*) (pack + 26));
   // Wall Signal Strength
-  ret.wall.wall_signal = *((unsigned short*) (pack + 28));
+  ret.wall.wall_signal = *((uint16*) (pack + 28));
   // Cliff Signal Strength
-  ret.cliff.left_signal        = *((unsigned short*) (pack + 30));
-  ret.cliff.front_left_signal  = *((unsigned short*) (pack + 32));
-  ret.cliff.front_right_signal = *((unsigned short*) (pack + 34));
-  ret.cliff.right_signal       = *((unsigned short*) (pack + 36));
+  ret.cliff.left_signal        = *((uint16*) (pack + 30));
+  ret.cliff.front_left_signal  = *((uint16*) (pack + 32));
+  ret.cliff.front_right_signal = *((uint16*) (pack + 34));
+  ret.cliff.right_signal       = *((uint16*) (pack + 36));
   // Unused Byte
   // pack[38, 39, 40] is unused byte
   // Charging sources availability
@@ -267,11 +270,11 @@ void roombaSci::packetToStruct(roomba_500driver_meiji::Roomba500State& ret,
   // Requested Velocity and radius
   ret.request.velocity       = *((signed short*) (pack + 46));
   ret.request.radius         = *((signed short*) (pack + 48));
-  ret.request.right_velocity = *((signed short*) (pack + 50));
+  ret.request.right_velocity = *((signed short*) (pack + 50)); // not working
   ret.request.left_velocity  = *((signed short*) (pack + 52));
   // Encoder counts
-  ret.encoder_counts.left  = *((unsigned short*) (pack + 54));
-  ret.encoder_counts.right = *((unsigned short*) (pack + 56));
+  ret.encoder_counts.left  = *((uint16*) (pack + 54));
+  ret.encoder_counts.right = *((uint16*) (pack + 56)); // not working
   // Light Bumper
   ret.light_bumper.left
     = (bool)(pack[58] & LT_BUMPER_LEFT);
@@ -286,18 +289,12 @@ void roombaSci::packetToStruct(roomba_500driver_meiji::Roomba500State& ret,
   ret.light_bumper.right
     = (bool)(pack[58] & LT_BUMPER_RIGHT);
   // Light Bumper Signal Strength
-  ret.light_bumper.left_signal
-    = *((unsigned short*) (pack + 59));
-  ret.light_bumper.front_left_signal
-    = *((unsigned short*) (pack + 61));
-  ret.light_bumper.center_left_signal
-    = *((unsigned short*) (pack + 63));
-  ret.light_bumper.center_right_signal
-    = *((unsigned short*) (pack + 65));
-  ret.light_bumper.front_right_signal
-    = *((unsigned short*) (pack + 67));
-  ret.light_bumper.right_signal
-    = *((unsigned short*) (pack + 69));
+  ret.light_bumper.left_signal         = *((uint16*) (pack + 59));
+  ret.light_bumper.front_left_signal   = *((uint16*) (pack + 61));
+  ret.light_bumper.center_left_signal  = *((uint16*) (pack + 63));
+  ret.light_bumper.center_right_signal = *((uint16*) (pack + 65));
+  ret.light_bumper.front_right_signal  = *((uint16*) (pack + 67));
+  ret.light_bumper.right_signal        = *((uint16*) (pack + 69));
   // Motor Current
   ret.motor_current.left_wheel  = *((signed short*) (pack + 71));
   ret.motor_current.right_wheel = *((signed short*) (pack + 73));
