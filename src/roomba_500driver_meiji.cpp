@@ -127,7 +127,7 @@ void printSensors(const roomba_500driver_meiji::Roomba500State& sens) {
        << (sens.wheel_overcurrents.main_brush ? "Main Brush, " : "")
        << (sens.wheel_overcurrents.right_wheel ? "Right Wheel, " : "")
        << (sens.wheel_overcurrents.left_wheel ? "Left Wheel" : "") << endl;
-  cout << "Dirt Detection:  " << sens.dirt_detect << endl;
+  cout << "Dirt Detection:  " << (int)sens.dirt_detect << endl;
   cout << "IR Character:"
        << "\n  Right: " << (int)sens.ir_opcodes.right
        << "\n  Left: "  << (int)sens.ir_opcodes.left
@@ -141,9 +141,9 @@ void printSensors(const roomba_500driver_meiji::Roomba500State& sens) {
        << (sens.button.day      ? "Day, " : "")
        << (sens.button.clock    ? "Clock, " : "")
        << (sens.button.schedule ? "Schedule" : "") << endl;
-  cout << "Travel:"
-       << "\n  Distance: " << sens.travel.distance << "[mm?]"
-       << "\n  Angle: " << sens.travel.angle << "[rad?]" << endl;
+  cout << "Traveled (From the last acquisition.):"
+       << "\n  Distance: " << sens.travel.distance << " [mm]"
+       << "\n  Angle: " << sens.travel.angle << " [rad]" << endl;
   cout << "Battery:"
        << "\n  Charging State: " << (uint)sens.battery.charging_state
        << "\n  Voltage: " << sens.battery.voltage
@@ -157,8 +157,8 @@ void printSensors(const roomba_500driver_meiji::Roomba500State& sens) {
        << endl;
   cout << "OI Mode : " << (int)sens.oi_mode << endl;
   cout << "Song:"
-       << "\n  Numer:   " << sens.song.number
-       << "\n  Playing: " << sens.song.playing << endl;
+       << "\n  Numer:   " << (int)sens.song.number
+       << "\n  Playing: " << (int)sens.song.playing << endl;
   cout << "Request:"
        << "\n  Velocity: " << sens.request.velocity
        << "\n  Radius: " << sens.request.radius
@@ -168,23 +168,23 @@ void printSensors(const roomba_500driver_meiji::Roomba500State& sens) {
        << "\n  Right: " << sens.encoder_counts.right
        << "\n  Left : " << sens.encoder_counts.left << endl;
   cout << "Light Bumper: "
-       << "\n  Left: "
-       << (sens.light_bumper.left ? "Hit    " : "Not Hit")
+       << "\n  Left:         "
+       << (sens.light_bumper.left ? "    Hit" : "Not Hit")
        << ", (" << sens.light_bumper.left_signal << ")"
-       << "\n  Right: "
-       << (sens.light_bumper.right ? "Hit    " : "Not Hit")
+       << "\n  Right:        "
+       << (sens.light_bumper.right ? "    Hit" : "Not Hit")
        << ", (" << sens.light_bumper.right_signal << ")"
-       << "\n  Front Left: "
-       << (sens.light_bumper.front_left ? "Hit    " : "Not Hit")
+       << "\n  Front Left:   "
+       << (sens.light_bumper.front_left ? "    Hit" : "Not Hit")
        << ", (" << sens.light_bumper.front_left_signal << ")"
-       << "\n  Front Right: "
-       << (sens.light_bumper.front_right ? "Hit    " : "Not Hit")
+       << "\n  Front Right:  "
+       << (sens.light_bumper.front_right ? "    Hit" : "Not Hit")
        << ", (" << sens.light_bumper.front_right_signal << ")"
-       << "\n  Center Left: "
-       << (sens.light_bumper.center_left ? "Hit    " : "Not Hit")
+       << "\n  Center Left:  "
+       << (sens.light_bumper.center_left ? "    Hit" : "Not Hit")
        << ", (" << sens.light_bumper.center_left_signal << ")"
        << "\n  Center Right: "
-       << (sens.light_bumper.center_right ? "Hit    " : "Not Hit")
+       << (sens.light_bumper.center_right ? "    Hit" : "Not Hit")
        << ", (" << sens.light_bumper.center_right_signal << ")" << endl;
   cout << "Motor Current:"
        << "\n  Left Wheel: " << sens.motor_current.left_wheel
