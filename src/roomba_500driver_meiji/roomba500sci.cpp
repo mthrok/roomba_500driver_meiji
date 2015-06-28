@@ -197,7 +197,6 @@ int roombaSci::getSensors(roomba_500driver_meiji::Roomba500State& sensor) {
   return ret;
 }
 
-// TODO : Review
 void roombaSci::packetToStruct(roomba_500driver_meiji::Roomba500State& ret,
 			       const unsigned char* pack) {
   // Bumps and Wheel Drops
@@ -216,11 +215,11 @@ void roombaSci::packetToStruct(roomba_500driver_meiji::Roomba500State& ret,
   ret.wall.vwall = (bool)(pack[6] & 0x01);
   // Wheel Overcurrents
   ret.wheel_overcurrents.left_wheel  = (bool)(pack[7] & LEFT_WHEEL);
-  ret.wheel_overcurrents.right_wheel = (bool)(pack[7] & RIGHT_WHEEL);  // TODO : Add these message
+  ret.wheel_overcurrents.right_wheel = (bool)(pack[7] & RIGHT_WHEEL);
   ret.wheel_overcurrents.main_brush  = (bool)(pack[7] & MAIN_BRUSH);
   ret.wheel_overcurrents.side_brush  = (bool)(pack[7] & SIDE_BRUSH);
   // Dirt Detect
-  ret.dirt_detect = pack[8]; // TODO : Review variable type
+  ret.dirt_detect = pack[8];
   // Unused Byte
   // pack[9] is unused byte
   // IR Character Omni
@@ -237,15 +236,15 @@ void roombaSci::packetToStruct(roomba_500driver_meiji::Roomba500State& ret,
   ret.button.schedule = (bool)(pack[13] & BB_SCHEDULE);
   ret.button.clock    = (bool)(pack[13] & BB_CLOCK);
   // Traveled distance and angle
-  ret.travel.distance = *((signed short*) (pack + 14)); // TODO : Add message
-  ret.travel.angle = *((signed short*) (pack + 16));
+  ret.travel.distance = *((signed short*) (pack + 14));
+  ret.travel.angle    = *((signed short*) (pack + 16));
   // Battery Charging state, Voltage, Current, Temperature, Charge, Capacity
   ret.battery.charging_state = pack[18];
-  ret.battery.voltage = *((unsigned short*) (pack + 19));
-  ret.battery.current = *((signed short*) (pack + 21));
-  ret.battery.temperature = *((signed char*) (pack + 23));
-  ret.battery.charge = *((unsigned short*) (pack + 24));
-  ret.battery.capacity = *((unsigned short*) (pack + 26));
+  ret.battery.voltage     = *((unsigned short*) (pack + 19));
+  ret.battery.current     = *((signed short*)   (pack + 21));
+  ret.battery.temperature = *((signed char*)    (pack + 23));
+  ret.battery.charge      = *((unsigned short*) (pack + 24));
+  ret.battery.capacity    = *((unsigned short*) (pack + 26));
   // Wall Signal Strength
   ret.wall.wall_signal = *((unsigned short*) (pack + 28));
   // Cliff Signal Strength
@@ -261,15 +260,15 @@ void roombaSci::packetToStruct(roomba_500driver_meiji::Roomba500State& ret,
   // OI Mode
   ret.oi_mode = pack[42];
   // Song
-  ret.song.number = pack[43]; // TODO : Check variable type
+  ret.song.number  = pack[43];
   ret.song.playing = pack[44];
   // #Stream packets
-  ret.stream_packets = pack[45]; // TODO rename from oi_stream_num_packets
+  ret.stream_packets = pack[45];
   // Requested Velocity and radius
-  ret.request.velocity = *((signed short*) (pack + 46)); // TODO : Add message
-  ret.request.radius   = *((signed short*) (pack + 48));
+  ret.request.velocity       = *((signed short*) (pack + 46));
+  ret.request.radius         = *((signed short*) (pack + 48));
   ret.request.right_velocity = *((signed short*) (pack + 50));
-  ret.request.left_velocity = *((signed short*) (pack + 52));
+  ret.request.left_velocity  = *((signed short*) (pack + 52));
   // Encoder counts
   ret.encoder_counts.left  = *((unsigned short*) (pack + 54));
   ret.encoder_counts.right = *((unsigned short*) (pack + 56));

@@ -49,21 +49,22 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate messages in the 'msg' folder
 add_message_files(
   FILES
-  BumpsWheeldrops.msg
   Wall.msg
+  Song.msg
   Cliff.msg
-  WheelOvercurrents.msg
-  IR_Char.msg
   Button.msg
   Travel.msg
+  IR_Char.msg
   Battery.msg
-  ChargingSource.msg
-  Song.msg
   Request.msg
-  EncoderCounts.msg
+  RoombaCtrl.msg
   LightBumper.msg
   MotorCurrent.msg
+  EncoderCounts.msg
+  ChargingSource.msg
   Roomba500State.msg
+  BumpsWheeldrops.msg
+  WheelOvercurrents.msg
 )
 
 ## Generate services in the 'srv' folder
