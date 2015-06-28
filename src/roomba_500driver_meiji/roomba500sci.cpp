@@ -225,76 +225,76 @@ void roombaSci::packetToStruct(roomba_500driver_meiji::Roomba500State& ret,
   ret.dirt_detect = pack[8];
   // Unused Byte
   // pack[9] is unused byte
-  // IR Character Omni
-  ret.ir_char.omni  = pack[10];
-  ret.ir_char.left  = pack[11];
-  ret.ir_char.right = pack[12];
+  // IR Opcodes
+  ret.ir_opcodes.omni  = pack[10];
+  ret.ir_opcodes.left  = pack[69]; // <- Attention
+  ret.ir_opcodes.right = pack[70]; // <- It's confusing.
   // Buttons
-  ret.button.clean    = (bool)(pack[13] & BB_CLEAN);
-  ret.button.spot     = (bool)(pack[13] & BB_SPOT);
-  ret.button.dock     = (bool)(pack[13] & BB_DOCK);
-  ret.button.minute   = (bool)(pack[13] & BB_MINUTE);
-  ret.button.hour     = (bool)(pack[13] & BB_HOUR);
-  ret.button.day      = (bool)(pack[13] & BB_DAY);
-  ret.button.schedule = (bool)(pack[13] & BB_SCHEDULE);
-  ret.button.clock    = (bool)(pack[13] & BB_CLOCK);
+  ret.button.clean    = (bool)(pack[11] & BB_CLEAN);
+  ret.button.spot     = (bool)(pack[11] & BB_SPOT);
+  ret.button.dock     = (bool)(pack[11] & BB_DOCK);
+  ret.button.minute   = (bool)(pack[11] & BB_MINUTE);
+  ret.button.hour     = (bool)(pack[11] & BB_HOUR);
+  ret.button.day      = (bool)(pack[11] & BB_DAY);
+  ret.button.schedule = (bool)(pack[11] & BB_SCHEDULE);
+  ret.button.clock    = (bool)(pack[11] & BB_CLOCK);
   // Traveled distance and angle
-  ret.travel.distance = *((signed short*) (pack + 14));
-  ret.travel.angle    = *((signed short*) (pack + 16));
+  ret.travel.distance = *((signed short*) (pack + 12));
+  ret.travel.angle    = *((signed short*) (pack + 14));
   // Battery Charging state, Voltage, Current, Temperature, Charge, Capacity
-  ret.battery.charging_state = pack[18];
-  ret.battery.voltage     = *((uint16*) (pack + 19));
-  ret.battery.current     = *((signed short*)   (pack + 21));
-  ret.battery.temperature = *((signed char*)    (pack + 23));
-  ret.battery.charge      = *((uint16*) (pack + 24));
-  ret.battery.capacity    = *((uint16*) (pack + 26));
+  ret.battery.charging_state = pack[16];
+  ret.battery.voltage     = *((uint16*) (pack + 17));
+  ret.battery.current     = *((signed short*)   (pack + 19));
+  ret.battery.temperature = *((signed char*)    (pack + 21));
+  ret.battery.charge      = *((uint16*) (pack + 22));
+  ret.battery.capacity    = *((uint16*) (pack + 24));
   // Wall Signal Strength
-  ret.wall.wall_signal = *((uint16*) (pack + 28));
+  ret.wall.wall_signal = *((uint16*) (pack + 26));
   // Cliff Signal Strength
-  ret.cliff.left_signal        = *((uint16*) (pack + 30));
-  ret.cliff.front_left_signal  = *((uint16*) (pack + 32));
-  ret.cliff.front_right_signal = *((uint16*) (pack + 34));
-  ret.cliff.right_signal       = *((uint16*) (pack + 36));
+  ret.cliff.left_signal        = *((uint16*) (pack + 28));
+  ret.cliff.front_left_signal  = *((uint16*) (pack + 30));
+  ret.cliff.front_right_signal = *((uint16*) (pack + 32));
+  ret.cliff.right_signal       = *((uint16*) (pack + 34));
   // Unused Byte
-  // pack[38, 39, 40] is unused byte
+  // pack[36, 37, 38] is unused byte
   // Charging sources availability
-  ret.charging_source.home_base        = (bool)(pack[41] & HOME_BASE);
-  ret.charging_source.internal_charger = (bool)(pack[41] & INTERNAL_CHARGER);
+  ret.charging_source.home_base        = (bool)(pack[39] & HOME_BASE);
+  ret.charging_source.internal_charger = (bool)(pack[39] & INTERNAL_CHARGER);
   // OI Mode
-  ret.oi_mode = pack[42];
+  ret.oi_mode = pack[40];
   // Song
-  ret.song.number  = pack[43];
-  ret.song.playing = pack[44];
+  ret.song.number  = pack[41];
+  ret.song.playing = pack[42];
   // #Stream packets
-  ret.stream_packets = pack[45];
+  ret.stream_packets = pack[43];
   // Requested Velocity and radius
-  ret.request.velocity       = *((signed short*) (pack + 46));
-  ret.request.radius         = *((signed short*) (pack + 48));
-  ret.request.right_velocity = *((signed short*) (pack + 50)); // not working
-  ret.request.left_velocity  = *((signed short*) (pack + 52));
+  ret.request.velocity       = *((signed short*) (pack + 44));
+  ret.request.radius         = *((signed short*) (pack + 46));
+  ret.request.right_velocity = *((signed short*) (pack + 48)); // not working
+  ret.request.left_velocity  = *((signed short*) (pack + 50));
   // Encoder counts
-  ret.encoder_counts.left  = *((uint16*) (pack + 54));
-  ret.encoder_counts.right = *((uint16*) (pack + 56)); // not working
+  ret.encoder_counts.left  = *((uint16*) (pack + 52));
+  ret.encoder_counts.right = *((uint16*) (pack + 54)); // not working
   // Light Bumper
   ret.light_bumper.left
-    = (bool)(pack[58] & LT_BUMPER_LEFT);
+    = (bool)(pack[56] & LT_BUMPER_LEFT);
   ret.light_bumper.front_left
-    = (bool)(pack[58] & LT_BUMPER_FRONT_LEFT);
+    = (bool)(pack[56] & LT_BUMPER_FRONT_LEFT);
   ret.light_bumper.center_left
-    = (bool)(pack[58] & LT_BUMPER_CENTER_LEFT);
+    = (bool)(pack[56] & LT_BUMPER_CENTER_LEFT);
   ret.light_bumper.center_right
-    = (bool)(pack[58] & LT_BUMPER_CENTER_RIGHT);
+    = (bool)(pack[56] & LT_BUMPER_CENTER_RIGHT);
   ret.light_bumper.front_right
-    = (bool)(pack[58] & LT_BUMPER_FRONT_RIGHT);
+    = (bool)(pack[56] & LT_BUMPER_FRONT_RIGHT);
   ret.light_bumper.right
-    = (bool)(pack[58] & LT_BUMPER_RIGHT);
+    = (bool)(pack[56] & LT_BUMPER_RIGHT);
   // Light Bumper Signal Strength
-  ret.light_bumper.left_signal         = *((uint16*) (pack + 59));
-  ret.light_bumper.front_left_signal   = *((uint16*) (pack + 61));
-  ret.light_bumper.center_left_signal  = *((uint16*) (pack + 63));
-  ret.light_bumper.center_right_signal = *((uint16*) (pack + 65));
-  ret.light_bumper.front_right_signal  = *((uint16*) (pack + 67));
-  ret.light_bumper.right_signal        = *((uint16*) (pack + 69));
+  ret.light_bumper.left_signal         = *((uint16*) (pack + 57));
+  ret.light_bumper.front_left_signal   = *((uint16*) (pack + 59));
+  ret.light_bumper.center_left_signal  = *((uint16*) (pack + 61));
+  ret.light_bumper.center_right_signal = *((uint16*) (pack + 63));
+  ret.light_bumper.front_right_signal  = *((uint16*) (pack + 65));
+  ret.light_bumper.right_signal        = *((uint16*) (pack + 67));
   // Motor Current
   ret.motor_current.left_wheel  = *((signed short*) (pack + 71));
   ret.motor_current.right_wheel = *((signed short*) (pack + 73));

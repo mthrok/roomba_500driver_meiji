@@ -54,9 +54,9 @@ add_message_files(
   Cliff.msg
   Button.msg
   Travel.msg
-  IR_Char.msg
   Battery.msg
   Request.msg
+  IR_Opcodes.msg
   RoombaCtrl.msg
   LightBumper.msg
   MotorCurrent.msg

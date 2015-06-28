@@ -5,7 +5,7 @@ Wall                  wall
 Cliff                 cliff
 WheelOvercurrents     wheel_overcurrents
 uint8                 dirt_detect
-IR_Char               ir_char
+IR_Opcodes            ir_opcodes
 Button                button
 Travel                travel
 Battery               battery
