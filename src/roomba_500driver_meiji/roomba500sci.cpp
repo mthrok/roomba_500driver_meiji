@@ -16,7 +16,7 @@
  */
 //-----------------------------------------------------------------------------
 
-#include "roomba_500driver_meiji/roomba500sci.h"
+#include "roomba_500driver_meiji/roomba500sci.hpp"
 #include "ros/ros.h"
 
 #include <iostream>
@@ -86,7 +86,7 @@ void roombaSci::max() {
 }
 
 void roombaSci::dock() {
-  const unsigned char seq[]={OC_BUTTONS, roombaSci::BUTTON_DOCK};
+  const unsigned char seq[]={OC_BUTTONS, roombaSci::BB_DOCK};
   ser_->write(seq,2);
   time_->sleep(COMMAND_WAIT);
 }
@@ -94,14 +94,14 @@ void roombaSci::dock() {
 // example
 // MB_MAIN_BRUSH | MB_VACUUM | MB_SIDE_BRUSH
 // puts all motors driving.
-void roombaSci::driveMotors(roombaSci::MOTOR_BITS state) {
+void roombaSci::driveMotors(roombaSci::MOTOR_STATE_BITS state) {
   const unsigned char seq[]={OC_MOTORS, state};
   ser_->write(seq,2);
   time_->sleep(COMMAND_WAIT);
 }
 
-void roombaSci::forceSeekingDock() {
-  const unsigned char seq[]={OC_FORCE_SEEKING_DOCK};
+void roombaSci::seekDock() {
+  const unsigned char seq[]={OC_SEEK_DOCK};
   ser_->write(seq,1);
   time_->sleep(COMMAND_WAIT);
 }

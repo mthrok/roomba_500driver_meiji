@@ -18,7 +18,7 @@
 
 #include "ros/ros.h"
 
-#include "roomba_500driver_meiji/roomba500sci.h"
+#include "roomba_500driver_meiji/roomba500sci.hpp"
 #include <roomba_500driver_meiji/Roomba500State.h>
 #include <roomba_500driver_meiji/RoombaCtrl.h>
 
@@ -75,14 +75,14 @@ void cntl_callback(const roomba_500driver_meiji::RoombaCtrlConstPtr& msg){
     break;
 
   case roomba_500driver_meiji::RoombaCtrl::MOTORS:
-    roomba->driveMotors((roombaSci::MOTOR_BITS)
+    roomba->driveMotors((roombaSci::MOTOR_STATE_BITS)
 			(roombaSci::MB_MAIN_BRUSH |
 			 roombaSci::MB_SIDE_BRUSH |
 			 roombaSci::MB_VACUUM));
     break;
 
   case roomba_500driver_meiji::RoombaCtrl::MOTORS_OFF:
-    roomba->driveMotors((roombaSci::MOTOR_BITS)(0));
+    roomba->driveMotors((roombaSci::MOTOR_STATE_BITS)(0));
     break;
 
   case roomba_500driver_meiji::RoombaCtrl::DRIVE_DIRECT:
@@ -127,7 +127,7 @@ void printSensors(const roomba_500driver_meiji::Roomba500State& sens) {
        << sens.motor_overcurrents.side_brush << " "
        << sens.motor_overcurrents.vacuum << " "
        << sens.motor_overcurrents.main_brush << " "
-       << sens.motor_overcurrents.drive_righ t<< " "
+       << sens.motor_overcurrents.drive_right << " "
        << sens.motor_overcurrents.drive_left << endl;
   cout << "dirt_detector : "
        << (short)sens.dirt_detector.left << " "

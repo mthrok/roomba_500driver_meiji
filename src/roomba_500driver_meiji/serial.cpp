@@ -26,7 +26,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "roomba_500driver_meiji/serial.h"
+#include "roomba_500driver_meiji/serial.hpp"
 
 #include <iostream>
 using namespace std;
