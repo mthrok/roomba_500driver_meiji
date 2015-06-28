@@ -20,4 +20,4 @@ functionalities common to both 500 series and 600 series are currently available
 For the difference of 500 series and 600 series,
 please refer to the Appendix of [iRobot® Create® 2 Open Interface (OI)](http://www.irobot.com/~/media/MainSite/PDFs/About/STEM/Create/create_2_Open_Interface_Spec.pdf)
 
-# For the original adaptation of Roomba_500driver_meiji without any modification by me, checkout [`original` branch](https://github.com/mthrok/roomba_500driver_meiji/tree/original).
+For the original adaptation of Roomba_500driver_meiji without any modification by me, checkout [`original` branch](https://github.com/mthrok/roomba_500driver_meiji/tree/original).
