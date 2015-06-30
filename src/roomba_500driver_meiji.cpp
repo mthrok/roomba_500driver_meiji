@@ -31,9 +31,11 @@ boost::mutex cntl_mutex_;
 
 #include <iostream>
 #include <math.h>
+
 using namespace std;
 
-roombaSci* roomba;
+
+roombaC2::Roomba* roomba;
 roomba_500driver_meiji::RoombaCtrl roombactrl;
 
 void cntl_callback(const roomba_500driver_meiji::RoombaCtrlConstPtr& msg){
@@ -75,14 +77,14 @@ void cntl_callback(const roomba_500driver_meiji::RoombaCtrlConstPtr& msg){
     break;
 
   case roomba_500driver_meiji::RoombaCtrl::MOTORS:
-    roomba->driveMotors((roombaSci::MOTOR_STATE_BITS)
-			(roombaSci::MB_MAIN_BRUSH |
-			 roombaSci::MB_SIDE_BRUSH |
-			 roombaSci::MB_VACUUM));
+    roomba->driveMotors((roombaC2::MOTOR_STATE_BITS)
+			(roombaC2::MB_MAIN_BRUSH |
+			 roombaC2::MB_SIDE_BRUSH |
+			 roombaC2::MB_VACUUM));
     break;
 
   case roomba_500driver_meiji::RoombaCtrl::MOTORS_OFF:
-    roomba->driveMotors((roombaSci::MOTOR_STATE_BITS)(0));
+    roomba->driveMotors((roombaC2::MOTOR_STATE_BITS)(0));
     break;
 
   case roomba_500driver_meiji::RoombaCtrl::DRIVE_DIRECT:
@@ -194,7 +196,7 @@ void printSensors(const roomba_500driver_meiji::Roomba500State& sens) {
   cout << "Stasis: " << (sens.stasis ? "Forward" : "Not Forward") << endl;
 }
 
-double piToPI(double rad) {
+double normalizeRad(double rad) {
   double ret=rad;
   if(rad>M_PI)
     ret=rad-2.0*M_PI;
@@ -208,13 +210,13 @@ void calcOdometry (geometry_msgs::Pose2D& x,
 		   float dist,
 		   float angle) {
   x.theta=pre_x.theta+angle;
-  x.theta=piToPI(x.theta);
+  x.theta=normalizeRad(x.theta);
   x.x=pre_x.x+dist*cos(x.theta);
   x.y=pre_x.y+dist*sin(x.theta);
 }
 
 int main(int argc, char** argv) {
-  roomba = new roombaSci(B115200,"/dev/ttyUSB0");
+  roomba = new roombaC2::Roomba(B115200,"/dev/ttyUSB0");
   roomba->wakeup();
   roomba->startup();
 
@@ -306,17 +308,8 @@ int main(int argc, char** argv) {
 
     ros::spinOnce();
     loop_rate.sleep();
-    /*
-    ROS_INFO("dt:%f\t444444444l: %5d\tr:%5d\tdl %4d\tdr %4d\tx:%f\ty:%f\ttheta:%f",
-	     last_time.toSec()-current_time.toSec(),
-	     sens.encoder_counts.left, sens.encoder_counts.right,
-	     roomba->dEncoderLeft(),
-	     roomba->dEncoderRight(),
-	     pose.x, pose.y, pose.theta/M_PI*180.0);
-    */
   }
   roomba->powerOff();
-  roomba->time_->sleep(1);
   delete roomba;
   return 0;
 }

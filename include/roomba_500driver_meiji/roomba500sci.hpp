@@ -20,44 +20,9 @@
 #define _ROOMBASCI_H
 
 #include "serial.hpp"
-#include <sys/time.h>
-#include <unistd.h>
-
-#include <cmath>
 #include <roomba_500driver_meiji/Roomba500State.h>
 
-class Timer {
-public:
-  void sleep(float sec){
-    long usec=(long)(sec*1000000);
-    usleep(usec);
-  }
-};
-
-const float COMMAND_WAIT=0.01;	 // [sec], this time is for Roomba 500 series
-const short DEFAULT_VELOCITY=200; // [mm/s]
-
-// DRIVE Special codes
-const short STRAIGHT_RADIUS=0x8000;
-const short TURN_CLOCK=-1;
-const short TURN_CNT_CLOCK=1;
-
-class roombaSci {
- protected:
-  int receive(void);
-  int receive(unsigned char* pack, int byte);
-
-  void packetToStruct(roomba_500driver_meiji::Roomba500State& ret,
-		      const unsigned char* pack);
-  Serial* ser_;
-  unsigned char packet_[80];
-  unsigned int enc_count_l_;
-  unsigned int enc_count_r_;
-  int d_enc_count_l_;
-  int d_enc_count_r_;
-  int d_pre_enc_l_;
-  int d_pre_enc_r_;
- public:
+namespace roombaC2 {
   // Refer to
   // [1]
   // "iRobot® Create® 2 Open Interface (OI) Specification based on the
@@ -76,7 +41,7 @@ class roombaSci {
     OC_START = 128,
     OC_BAUD  = 129, // (1)
 
-    OC_CONTROL = 130, // Only explained in [3]
+    OC_CONTROL = 130, // Only found in ref.[3], not in [1] and [2]
     OC_SAFE    = 131,
     OC_FULL    = 132,
     OC_POWER   = 133,
@@ -408,49 +373,59 @@ class roombaSci {
     OCB_LEFT_WHEEL  = 0x08
   };
 
-  roombaSci(int baud=B115200, const char* dev="/dev/ttyUSB0");
-  ~roombaSci();
+  const float COMMAND_WAIT = 0.01;    // [sec], this time is for Roomba 500 series
+  const short DEFAULT_VELOCITY = 200; // [mm/s]
 
-  void wakeup(void);
-  void startup();
-  void powerOff();
-  void clean();
-  void safe();
-  void full();
-  void spot();
-  void max();
-  void dock();
 
-  void driveMotors(roombaSci::MOTOR_STATE_BITS state);
-  void seekDock();
+  class Roomba {
+  protected:
+    int receive(void);
+    int receive(unsigned char* pack, int byte);
 
-  void drive(short velocity, short radius);
-  void driveDirect(float velocity, float yawrate);
-  void drivePWM(int right_pwm,int left_pwm);
+    void packetToStruct(roomba_500driver_meiji::Roomba500State& ret,
+			const unsigned char* pack);
+    Serial* ser_;
+    unsigned char packet_[80];
+    unsigned int enc_count_l_;
+    unsigned int enc_count_r_;
+    int d_enc_count_l_;
+    int d_enc_count_r_;
+    int d_pre_enc_l_;
+    int d_pre_enc_r_;
+  public:
+    Roomba(int baud=B115200, const char* dev="/dev/ttyUSB0");
+    ~Roomba();
 
-  void song(int song_number, int song_length);
-  void playing(int song_number);
+    void wakeup(void);
+    void startup();
+    void powerOff();
+    void clean();
+    void safe();
+    void full();
+    void spot();
+    void max();
+    void dock();
 
-  short velToPWMRight(float velocity);
-  short velToPWMLeft(float velocity);
-  float velToPWM(float velocity);
+    void driveMotors(roombaC2::MOTOR_STATE_BITS state);
+    void seekDock();
 
-  int sendOPCODE(roombaSci::OPCODE);
-  int getSensors();
-  int getSensors(roomba_500driver_meiji::Roomba500State& sensor);
+    void drive(short velocity, short radius);
+    void driveDirect(float velocity, float yawrate);
+    void drivePWM(int right_pwm,int left_pwm);
 
-  int dEncoderRight(int max_delta=200){
-    d_enc_count_r_=std::max(-max_delta,d_enc_count_r_);
-    d_enc_count_r_=std::min(max_delta,d_enc_count_r_);
-    return d_enc_count_r_;
-  }
+    void song(int song_number, int song_length);
+    void playing(int song_number);
 
-  int dEncoderLeft(int max_delta=200){
-    d_enc_count_l_=std::max(-max_delta,d_enc_count_l_);
-    d_enc_count_l_=std::min(max_delta,d_enc_count_l_);
-    return d_enc_count_l_;
-  }
+    short velToPWMRight(float velocity);
+    short velToPWMLeft(float velocity);
+    float velToPWM(float velocity);
 
-  Timer* time_;
-}; // class roombaSci
+    int sendOPCODE(roombaC2::OPCODE);
+    int getSensors(roomba_500driver_meiji::Roomba500State& sensor);
+
+    int dEncoderRight(int max_delta=200);
+
+    int dEncoderLeft(int max_delta=200);
+  }; // class Roomba
+}; // namespace roombaC2
 #endif	// _ROOMBASCI_H
