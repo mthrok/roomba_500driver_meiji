@@ -35,7 +35,7 @@ boost::mutex cntl_mutex_;
 using namespace std;
 
 
-roombaC2::Roomba* roomba;
+roombaC2::Roomba roomba;
 roomba_500driver_meiji::RoombaCtrl roombactrl;
 
 void cntl_callback(const roomba_500driver_meiji::RoombaCtrlConstPtr& msg){
@@ -44,66 +44,66 @@ void cntl_callback(const roomba_500driver_meiji::RoombaCtrlConstPtr& msg){
 
   switch(msg->mode){
   case roomba_500driver_meiji::RoombaCtrl::SPOT:
-    roomba->spot();
+    roomba.spot();
     break;
 
   case roomba_500driver_meiji::RoombaCtrl::SAFE:
-    roomba->safe();
+    roomba.safe();
     break;
 
   case roomba_500driver_meiji::RoombaCtrl::CLEAN:
-    roomba->clean();
+    roomba.clean();
     break;
 
   case roomba_500driver_meiji::RoombaCtrl::POWER:
-    roomba->powerOff();
+    roomba.powerOff();
     break;
 
   case roomba_500driver_meiji::RoombaCtrl::WAKEUP:
-    roomba->wakeup();
-    roomba->startup();
+    roomba.wakeup();
+    roomba.startup();
     break;
 
   case roomba_500driver_meiji::RoombaCtrl::FULL:
-    roomba->full();
+    roomba.full();
     break;
 
   case roomba_500driver_meiji::RoombaCtrl::MAX:
-    roomba->max();
+    roomba.max();
     break;
 
   case roomba_500driver_meiji::RoombaCtrl::DOCK:
-    roomba->dock();
+    roomba.dock();
     break;
 
   case roomba_500driver_meiji::RoombaCtrl::MOTORS:
-    roomba->driveMotors((roombaC2::MOTOR_STATE_BITS)
+    roomba.driveMotors((roombaC2::MOTOR_STATE_BITS)
 			(roombaC2::MB_MAIN_BRUSH |
 			 roombaC2::MB_SIDE_BRUSH |
 			 roombaC2::MB_VACUUM));
     break;
 
   case roomba_500driver_meiji::RoombaCtrl::MOTORS_OFF:
-    roomba->driveMotors((roombaC2::MOTOR_STATE_BITS)(0));
+    roomba.driveMotors((roombaC2::MOTOR_STATE_BITS)(0));
     break;
 
   case roomba_500driver_meiji::RoombaCtrl::DRIVE_DIRECT:
-    roomba->driveDirect(msg->cntl.linear.x, msg->cntl.angular.z);
+    roomba.driveDirect(msg->cntl.linear.x, msg->cntl.angular.z);
     break;
 
   case roomba_500driver_meiji::RoombaCtrl::DRIVE_PWM:
-    roomba->drivePWM(msg->r_pwm, msg->l_pwm);
+    roomba.drivePWM(msg->r_pwm, msg->l_pwm);
     break;
 
   case roomba_500driver_meiji::RoombaCtrl::SONG:
-    roomba->safe();
-    roomba->song(1,1);
-    roomba->playing(1);
+    roomba.safe();
+    roomba.song(1,1);
+    roomba.playing(1);
     break;
 
   case roomba_500driver_meiji::RoombaCtrl::DRIVE:
   default:
-    roomba->drive(msg->velocity, msg->radius);
+    roomba.drive(msg->velocity, msg->radius);
 
   }
 }
@@ -153,7 +153,7 @@ void printSensors(const roomba_500driver_meiji::Roomba500State& sens) {
        << "\n  Temperature: " << (int) sens.battery.temperature
        << "\n  Ramains: "
        << sens.battery.charge << " / " << sens.battery.capacity
-       << " (" << sens.battery.charge / double(sens.battery.capacity) << "[%] )"
+       << " (" << 100.0f * sens.battery.charge / sens.battery.capacity << "[%])"
        << endl
        << "Charge Source:\n  "
        << (sens.charging_source.home_base ? "Home Base, " : "")
@@ -218,9 +218,9 @@ void calcOdometry (geometry_msgs::Pose2D& x,
 }
 
 int main(int argc, char** argv) {
-  roomba = new roombaC2::Roomba(B115200,"/dev/ttyUSB0");
-  roomba->wakeup();
-  roomba->startup();
+  roomba.init(B115200,"/dev/ttyUSB0");
+  roomba.wakeup();
+  roomba.startup();
 
   ros::init(argc, argv, "roomba_driver");
   ros::NodeHandle n;
@@ -238,8 +238,6 @@ int main(int argc, char** argv) {
 
   ros::Time current_time, last_time;
   current_time = ros::Time::now();
-  last_time = ros::Time::now();
-
   while (ros::ok()) {
     current_time = ros::Time::now();
 
@@ -247,27 +245,27 @@ int main(int argc, char** argv) {
     sens.header.stamp=ros::Time::now();
     {
       boost::mutex::scoped_lock(cntl_mutex_);
-      roomba->getSensors(sens);
+      roomba.getSensors(sens);
     }
     printSensors(sens);
 
-    int enc_r = roomba->dEncoderRight();
-    int enc_l = roomba->dEncoderLeft();
+    int enc_r = roomba.dEncoderRight();
+    int enc_l = roomba.dEncoderLeft();
     if(abs(enc_r) == 200)
       enc_r = pre_enc_r;
     if(abs(enc_l) == 200)
       enc_l = pre_enc_l;
 
-    geometry_msgs::Pose2D pre=pose;
+    geometry_msgs::Pose2D pre = pose;
     float distance = (float)((float)enc_r + (float)enc_l) / 2270.0 * 0.5;
     float angle    = (float)((float)enc_r - (float)enc_l) / 2270.0 / 0.235;
-    //sens.travel.distance=(short)(1000 * distance);
-    //sens.travel.angle=(short)(angle * 180.0 / M_PI);
+    sens.travel.distance=(short)(1000 * distance);
+    sens.travel.angle=(short)(angle * 180.0 / M_PI);
 
     pub_state.publish(sens);
     calcOdometry(pose, pre, distance, angle);
-    pre_enc_r=roomba->dEncoderRight();
-    pre_enc_l=roomba->dEncoderLeft();
+    pre_enc_r=roomba.dEncoderRight();
+    pre_enc_l=roomba.dEncoderLeft();
 
     //since all odometry is 6DOF we'll need a quaternion created from yaw
     geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(pose.theta);
@@ -290,28 +288,20 @@ int main(int argc, char** argv) {
     nav_msgs::Odometry odom;
     odom.header.stamp = current_time;
     odom.header.frame_id = "odom";
-
-    //set the position
     odom.pose.pose.position.x = pose.x;
     odom.pose.pose.position.y = pose.y;
     odom.pose.pose.position.z = 0.0;
     odom.pose.pose.orientation = odom_quat;
-
-    //set the velocity
     odom.child_frame_id = "base_link";
     odom.twist.twist.linear.x = roombactrl.cntl.linear.x;
     odom.twist.twist.linear.y = 0;
     odom.twist.twist.angular.z = roombactrl.cntl.angular.z;
-
-
     pub_odo.publish(odom);
 
-    last_time = current_time;
 
     ros::spinOnce();
     loop_rate.sleep();
   }
-  roomba->powerOff();
-  delete roomba;
+  roomba.powerOff();
   return 0;
 }

@@ -393,8 +393,9 @@ namespace roombaC2 {
     int d_pre_enc_l_;
     int d_pre_enc_r_;
   public:
-    Roomba(int baud=B115200, const char* dev="/dev/ttyUSB0");
+    Roomba();
     ~Roomba();
+    void init(int baud=B115200, const char* dev="/dev/ttyUSB0");
 
     void wakeup(void);
     void startup();

@@ -35,24 +35,26 @@ void sleep_for_sec (float sec){
   usleep(usec);
 }
 
-Roomba::Roomba(int baud, const char* dev)
+Roomba::Roomba()
   : enc_count_l_(0)
   , enc_count_r_(0)
   , d_enc_count_l_(0)
   , d_enc_count_r_(0)
   , d_pre_enc_l_(0)
   , d_pre_enc_r_(0)
-{
+{}
+
+Roomba::~Roomba() {
+  delete ser_;
+}
+
+void Roomba::init(int baud, const char* dev) {
   ser_ = new Serial(baud, dev, 80, 0);
   sleep(1);
 
   roomba_500driver_meiji::Roomba500State sensor;
   getSensors(sensor);
-}
-
-Roomba::~Roomba() {
-  delete ser_;
-}
+};
 
 void Roomba::wakeup(void) {
   ser_ -> setRts(0);
