@@ -78,6 +78,7 @@ int main(int argc, char** argv) {
   while (ros::ok()) {
     current_time = ros::Time::now();
     roomba.updateSensorState();
+    roomba.setTimestamp(current_time);
     roomba.printSensorState();
 
     int enc_r = roomba.dEncoderRight();

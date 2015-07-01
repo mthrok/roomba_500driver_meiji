@@ -213,10 +213,13 @@ void Roomba::updateSensorState() {
   if (80 == (comm_ -> read(raw_state, 80))) {
     convertState(raw_state, state_);
   } else {
-    std::string err_msg(__func__); err_msg += ":Failed to receive sensor state.";
-    throw std::runtime_error(err_msg.c_str());
+    //std::string err_msg(__func__); err_msg += ":Failed to receive sensor state.";
+    //throw std::runtime_error(err_msg.c_str());
   }
-  state_.header.stamp = ros::Time::now();
+}
+
+void Roomba::setTimestamp(ros::Time time) {
+  state_.header.stamp = time;
 }
 
 RoombaState Roomba::getSensorState() const {

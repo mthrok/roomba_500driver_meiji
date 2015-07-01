@@ -109,6 +109,7 @@ namespace roombaC2 {
 
     void sendOpCode(roombaC2::OPCODE, const uint8 *dataBytes=NULL, uint nDataBytes=0);
     void updateSensorState();
+    void setTimestamp(ros::Time time);
     roomba_500driver_meiji::RoombaState getSensorState() const;
     void printSensorState();
 
