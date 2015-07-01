@@ -58,11 +58,11 @@ add_message_files(
   Request.msg
   IR_Opcodes.msg
   RoombaCtrl.msg
+  RoombaState.msg
   LightBumper.msg
   MotorCurrent.msg
   EncoderCounts.msg
   ChargingSource.msg
-  Roomba500State.msg
   BumpsWheeldrops.msg
   WheelOvercurrents.msg
 )

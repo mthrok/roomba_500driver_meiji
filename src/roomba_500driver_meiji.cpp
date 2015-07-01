@@ -19,184 +19,20 @@
 #include "ros/ros.h"
 
 #include "roomba_500driver_meiji/roomba500sci.hpp"
-#include <roomba_500driver_meiji/Roomba500State.h>
+#include <roomba_500driver_meiji/RoombaState.h>
 #include <roomba_500driver_meiji/RoombaCtrl.h>
 
 #include <tf/transform_broadcaster.h>
 #include <geometry_msgs/Pose2D.h>
 #include <nav_msgs/Odometry.h>
 
-#include <boost/thread.hpp>
-boost::mutex cntl_mutex_;
-
 #include <iostream>
 #include <math.h>
 
 using namespace std;
 
-
-roombaC2::Roomba roomba;
-roomba_500driver_meiji::RoombaCtrl roombactrl;
-
-void cntl_callback(const roomba_500driver_meiji::RoombaCtrlConstPtr& msg){
-  roombactrl = *msg;
-  boost::mutex::scoped_lock(cntl_mutex_);
-
-  switch(msg->mode){
-  case roomba_500driver_meiji::RoombaCtrl::SPOT:
-    roomba.spot();
-    break;
-
-  case roomba_500driver_meiji::RoombaCtrl::SAFE:
-    roomba.safe();
-    break;
-
-  case roomba_500driver_meiji::RoombaCtrl::CLEAN:
-    roomba.clean();
-    break;
-
-  case roomba_500driver_meiji::RoombaCtrl::POWER:
-    roomba.powerOff();
-    break;
-
-  case roomba_500driver_meiji::RoombaCtrl::WAKEUP:
-    roomba.wakeup();
-    roomba.startup();
-    break;
-
-  case roomba_500driver_meiji::RoombaCtrl::FULL:
-    roomba.full();
-    break;
-
-  case roomba_500driver_meiji::RoombaCtrl::MAX:
-    roomba.max();
-    break;
-
-  case roomba_500driver_meiji::RoombaCtrl::DOCK:
-    roomba.dock();
-    break;
-
-  case roomba_500driver_meiji::RoombaCtrl::MOTORS:
-    roomba.driveMotors((roombaC2::MOTOR_STATE_BITS)
-			(roombaC2::MB_MAIN_BRUSH |
-			 roombaC2::MB_SIDE_BRUSH |
-			 roombaC2::MB_VACUUM));
-    break;
-
-  case roomba_500driver_meiji::RoombaCtrl::MOTORS_OFF:
-    roomba.driveMotors((roombaC2::MOTOR_STATE_BITS)(0));
-    break;
-
-  case roomba_500driver_meiji::RoombaCtrl::DRIVE_DIRECT:
-    roomba.driveDirect(msg->cntl.linear.x, msg->cntl.angular.z);
-    break;
-
-  case roomba_500driver_meiji::RoombaCtrl::DRIVE_PWM:
-    roomba.drivePWM(msg->r_pwm, msg->l_pwm);
-    break;
-
-  case roomba_500driver_meiji::RoombaCtrl::SONG:
-    roomba.safe();
-    roomba.song(1,1);
-    roomba.playing(1);
-    break;
-
-  case roomba_500driver_meiji::RoombaCtrl::DRIVE:
-  default:
-    roomba.drive(msg->velocity, msg->radius);
-
-  }
-}
-
-void printSensors(const roomba_500driver_meiji::Roomba500State& sens) {
-  cout << "\n\n-------------------" << endl
-       << "Bumps:\n  "
-       << (sens.bumps_wheeldrops.bump_right ? "Right, " : "       ")
-       << (sens.bumps_wheeldrops.bump_left  ? "Left" : "") << endl
-       << "Wheeldrops:\n "
-       << (sens.bumps_wheeldrops.wheeldrop_right ? "Right, " : "       ")
-       << (sens.bumps_wheeldrops.wheeldrop_left  ? "Left" : "") << endl
-       << "Wall:\n  "
-       << (sens.wall.wall ? "Wall, " : "      ")
-       << (sens.wall.vwall ? "Virtual Wall" : "") << endl
-       << "Cliff:\n  "
-       << (sens.cliff.left ? "Left, " : "")
-       << (sens.cliff.front_left ? "Front Left, " : "")
-       << (sens.cliff.right ? "Right, " : "")
-       << (sens.cliff.front_right ? "Front Right " : "") << endl
-       << "Wheel Overcurrent:\n  "
-       << (sens.wheel_overcurrents.side_brush ? "Side Brush, " : "")
-       << (sens.wheel_overcurrents.main_brush ? "Main Brush, " : "")
-       << (sens.wheel_overcurrents.right_wheel ? "Right Wheel, " : "")
-       << (sens.wheel_overcurrents.left_wheel ? "Left Wheel" : "") << endl
-       << "Dirt Detection:  " << (int)sens.dirt_detect << endl
-       << "IR Character:"
-       << "\n  Right: " << (int)sens.ir_opcodes.right
-       << "\n  Left: "  << (int)sens.ir_opcodes.left
-       << "\n  Omni: "  << (int)sens.ir_opcodes.omni << endl
-       << "Buttons:\n  "
-       << (sens.button.clean    ? "Clean, " : "")
-       << (sens.button.spot     ? "Spot, " : "")
-       << (sens.button.dock     ? "Dock, " : "")
-       << (sens.button.minute   ? "Minute, " : "")
-       << (sens.button.hour     ? "Hour, " : "")
-       << (sens.button.day      ? "Day, " : "")
-       << (sens.button.clock    ? "Clock, " : "")
-       << (sens.button.schedule ? "Schedule" : "") << endl
-       << "Traveled (From the last acquisition.):"
-       << "\n  Distance: " << sens.travel.distance << " [mm]"
-       << "\n  Angle: " << sens.travel.angle << " [rad]" << endl
-       << "Battery:"
-       << "\n  Charging State: " << (uint)sens.battery.charging_state
-       << "\n  Voltage: " << sens.battery.voltage
-       << "\n  Current: " << sens.battery.current
-       << "\n  Temperature: " << (int) sens.battery.temperature
-       << "\n  Ramains: "
-       << sens.battery.charge << " / " << sens.battery.capacity
-       << " (" << 100.0f * sens.battery.charge / sens.battery.capacity << "[%])"
-       << endl
-       << "Charge Source:\n  "
-       << (sens.charging_source.home_base ? "Home Base, " : "")
-       << (sens.charging_source.internal_charger ? "Internal Charger." : "")
-       << endl
-       << "OI Mode : " << (int)sens.oi_mode << endl
-       << "Song:"
-       << "\n  Numer:   " << (int)sens.song.number
-       << "\n  Playing: " << (int)sens.song.playing << endl
-       << "Request:"
-       << "\n  Velocity: " << sens.request.velocity
-       << "\n  Radius: " << sens.request.radius
-       << "\n  Right Velocity: " << sens.request.right_velocity
-       << "\n  Left Velocity: " << sens.request.left_velocity << endl
-       << "Encoder Count:"
-       << "\n  L / R: " << sens.encoder_counts.right
-       << " / " << sens.encoder_counts.left << endl
-       << "Light Bumper: "
-       << "\n  Left:         "
-       << (sens.light_bumper.left ? "    Hit" : "Not Hit")
-       << ", (" << sens.light_bumper.left_signal << ")"
-       << "\n  Right:        "
-       << (sens.light_bumper.right ? "    Hit" : "Not Hit")
-       << ", (" << sens.light_bumper.right_signal << ")"
-       << "\n  Front Left:   "
-       << (sens.light_bumper.front_left ? "    Hit" : "Not Hit")
-       << ", (" << sens.light_bumper.front_left_signal << ")"
-       << "\n  Front Right:  "
-       << (sens.light_bumper.front_right ? "    Hit" : "Not Hit")
-       << ", (" << sens.light_bumper.front_right_signal << ")"
-       << "\n  Center Left:  "
-       << (sens.light_bumper.center_left ? "    Hit" : "Not Hit")
-       << ", (" << sens.light_bumper.center_left_signal << ")"
-       << "\n  Center Right: "
-       << (sens.light_bumper.center_right ? "    Hit" : "Not Hit")
-       << ", (" << sens.light_bumper.center_right_signal << ")" << endl
-       << "Motor Current:"
-       << "\n  Left Wheel: " << sens.motor_current.left_wheel
-       << "\n  Right Wheel: " << sens.motor_current.right_wheel
-       << "\n  Main Brush: " << sens.motor_current.main_brush
-       << "\n  Side Brush: " << sens.motor_current.side_brush << endl
-       << "Stasis: " << (sens.stasis ? "Forward" : "Not Forward") << endl;
-}
+typedef roomba_500driver_meiji::RoombaState RoombaState;
+typedef roomba_500driver_meiji::RoombaCtrl RoombaCtrl;
 
 double normalizeRad(double rad) {
   double ret=rad;
@@ -218,14 +54,15 @@ void calcOdometry (geometry_msgs::Pose2D& x,
 }
 
 int main(int argc, char** argv) {
+  roombaC2::Roomba roomba;
   roomba.init(B115200,"/dev/ttyUSB0");
   roomba.wakeup();
   roomba.startup();
 
   ros::init(argc, argv, "roomba_driver");
   ros::NodeHandle n;
-  ros::Subscriber cntl_sub = n.subscribe("/roomba/control", 100, cntl_callback);
-  ros::Publisher pub_state = n.advertise<roomba_500driver_meiji::Roomba500State>("/roomba/states", 100);
+  ros::Subscriber cntl_sub = n.subscribe("/roomba/control", 100, &roombaC2::Roomba::sendCtrl, &roomba);
+  ros::Publisher pub_state = n.advertise<RoombaState>("/roomba/states", 100);
 
   tf::TransformBroadcaster odom_broadcaster;
   ros::Publisher pub_odo= n.advertise<nav_msgs::Odometry >("/roomba/odometry", 100);
@@ -240,14 +77,8 @@ int main(int argc, char** argv) {
   current_time = ros::Time::now();
   while (ros::ok()) {
     current_time = ros::Time::now();
-
-    roomba_500driver_meiji::Roomba500State sens;
-    sens.header.stamp=ros::Time::now();
-    {
-      boost::mutex::scoped_lock(cntl_mutex_);
-      roomba.getSensors(sens);
-    }
-    printSensors(sens);
+    roomba.updateSensorState();
+    roomba.printSensorState();
 
     int enc_r = roomba.dEncoderRight();
     int enc_l = roomba.dEncoderLeft();
@@ -257,12 +88,13 @@ int main(int argc, char** argv) {
       enc_l = pre_enc_l;
 
     geometry_msgs::Pose2D pre = pose;
-    float distance = (float)((float)enc_r + (float)enc_l) / 2270.0 * 0.5;
-    float angle    = (float)((float)enc_r - (float)enc_l) / 2270.0 / 0.235;
-    sens.travel.distance=(short)(1000 * distance);
-    sens.travel.angle=(short)(angle * 180.0 / M_PI);
+    float distance = ((float)enc_r + enc_l) / 2270.0 * 0.5;
+    float angle    = ((float)enc_r - enc_l) / 2270.0 / 0.235;
+    roomba.setTravelDistance(distance);
+    roomba.setTravelAngle(angle);
 
-    pub_state.publish(sens);
+    pub_state.publish(roomba.getSensorState());
+
     calcOdometry(pose, pre, distance, angle);
     pre_enc_r=roomba.dEncoderRight();
     pre_enc_l=roomba.dEncoderLeft();
@@ -293,9 +125,9 @@ int main(int argc, char** argv) {
     odom.pose.pose.position.z = 0.0;
     odom.pose.pose.orientation = odom_quat;
     odom.child_frame_id = "base_link";
-    odom.twist.twist.linear.x = roombactrl.cntl.linear.x;
+    odom.twist.twist.linear.x = roomba.getCtrlLinearX();
     odom.twist.twist.linear.y = 0;
-    odom.twist.twist.angular.z = roombactrl.cntl.angular.z;
+    odom.twist.twist.angular.z = roomba.getCtrlAngleZ();
     pub_odo.publish(odom);
 
 
