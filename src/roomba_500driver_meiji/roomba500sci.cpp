@@ -17,23 +17,12 @@
 //-----------------------------------------------------------------------------
 
 #include "roomba_500driver_meiji/roomba500sci.hpp"
-#include <stdexcept>
-#include <string>
-/*
-void RuntimeError::concat(std::string message) {
-  message_ += message;
-}
 
-void RuntimeError::concat(const char* message) {
-  message_ += std::string(message);
-}
-
-const char* RuntimeError::what() const throw () {
-  return message_.c_str();
-}
-*/
-#include <unistd.h>
+#include <stdio.h>
 #include <cmath>
+#include <string>
+#include <unistd.h>
+#include <stdexcept>
 
 using namespace roombaC2;
 using namespace std;
@@ -46,25 +35,101 @@ void sleep_for_sec (float sec){
   usleep(usec);
 }
 
+// TODO Add other member variables to initalization list
 Roomba::Roomba()
-  : enc_count_l_(0)
-  , enc_count_r_(0)
-  , d_enc_count_l_(0)
-  , d_enc_count_r_(0)
-  , d_pre_enc_l_(0)
-  , d_pre_enc_r_(0)
+  : stopStateManager_(true)
+  , stateManager_()
 {}
 
 Roomba::~Roomba() {
+  // Stop state manager
+  stopStateManager_ = true;
+  stateManager_.join();
+  // Delete serial communication
   delete comm_;
 }
 
 void Roomba::init(int baud, const char* dev) {
   comm_ = new Serial(baud, dev, 80, 0);
   sleep(1);
-
-  updateSensorState();
+  startStateUpdater();
 };
+
+void Roomba::sendOpCode(OPCODE oc, const uint8* dataBytes,
+			uint nDataBytes) const{
+  // Concatenate operation code and databytes
+  uint nMsg = nDataBytes + 1;
+  uint8 *message = new uint8[nMsg];
+  message[0] = (uint8)oc;
+  if (dataBytes)
+    memcpy(message+1, dataBytes, nDataBytes);
+  // Send message
+  if (nMsg != comm_ -> write(message, nMsg)) {
+    //std::string err_msg(__func__); err_msg += ":Failed to send command.";
+    //throw std::runtime_error(err_msg.c_str());
+  }
+  sleep_for_sec(COMMAND_WAIT);
+}
+
+
+void Roomba::updateState() {
+  while(!stopStateManager_) {
+    // Retreive sensor values
+    updateSensorState();
+    printf("Encoder count L/R: %8d / %8d\n", sensor_.encoder_counts.left, sensor_.encoder_counts.right);
+    float distance = sensor_.travel.distance / 1000.0;
+    uint16 angle = sensor_.travel.angle;
+    printf("Distance Traveled: %8.3f [m]/ %8d [deg]\n", distance, angle);
+
+  /*
+  // Update internal encoder counts
+  if(std::abs((int)sensor.encoder_counts.right - (int)enc_count_r_) >= 60000) {
+    if(sensor.encoder_counts.right > enc_count_r_)
+      d_enc_count_r_ = -65535 - enc_count_r_ + sensor.encoder_counts.right;
+    else
+      d_enc_count_r_ = 65535 - enc_count_r_ + sensor.encoder_counts.right;
+  } else {
+    d_enc_count_r_ = sensor.encoder_counts.right - enc_count_r_;
+  }
+
+  if(std::abs((int)sensor.encoder_counts.left - (int)enc_count_l_) >= 60000) {
+    if(sensor.encoder_counts.left > enc_count_l_)
+      d_enc_count_l_ = -65535-enc_count_l_+sensor.encoder_counts.left;
+    else
+      d_enc_count_l_ = 65535-enc_count_l_+sensor.encoder_counts.left;
+  } else {
+    d_enc_count_l_ = sensor.encoder_counts.left - enc_count_l_;
+  }
+
+  enc_count_r_ = sensor.encoder_counts.right;
+  enc_count_l_ = sensor.encoder_counts.left;
+  */
+
+
+
+    /*
+    // Correct encoder values
+    int enc_r = dEncoderRight();
+    int enc_l = dEncoderLeft();
+    if(abs(enc_r) == 200)
+      enc_r = pre_enc_r;
+    if(abs(enc_l) == 200)
+      enc_l = pre_enc_l;
+
+    float distance = ((float)enc_r + enc_l) / 2270.0 * 0.5;
+    float angle = ((float)enc_r - enc_l) / 2270.0 / 0.235;
+    sens.travel.distance = distance;
+    sens.travel.angle = angle;
+    */
+    //
+    sleep_for_sec(1.0 / 10);
+  }
+}
+
+void Roomba::startStateUpdater() {
+  stopStateManager_ = false;
+  stateManager_ = boost::thread(&Roomba::updateState, this);
+}
 
 void Roomba::wakeup(void) {
   comm_ -> setRts(0);
@@ -190,27 +255,14 @@ void Roomba::playing(int song_number) {
   sleep_for_sec(COMMAND_WAIT);
 }
 
-void Roomba::sendOpCode(OPCODE oc, const uint8* dataBytes, uint nDataBytes) {
-  // Concatenate operation code and databytes
-  uint nMsg = nDataBytes + 1;
-  uint8 *message = new uint8[nMsg];
-  message[0] = (uint8)oc;
-  memcpy(message+1, dataBytes, nDataBytes);
-  // Send message
-  if (nMsg != comm_ -> write(message, nMsg)) {
-    std::string err_msg(__func__); err_msg += ":Failed to send command.";
-    throw std::runtime_error(err_msg.c_str());
-  }
-  sleep_for_sec(COMMAND_WAIT);
-}
-
 void Roomba::updateSensorState() {
   boost::mutex::scoped_lock(sensor_mutex_);
   uint8 raw_state[80];
 
   uint8 dataByte = ALL_PACKET;
   sendOpCode(OC_SENSORS, &dataByte, 1);
-  if (80 == (comm_ -> read(raw_state, 80))) {
+  int res = comm_ -> read(raw_state, 80);
+  if (80 == res) {
     convertState(raw_state, sensor_);
   } else {
     //std::string err_msg(__func__); err_msg += ":Failed to receive sensor state.";
@@ -218,22 +270,9 @@ void Roomba::updateSensorState() {
   }
 }
 
-void Roomba::setTimestamp(ros::Time time) {
-  sensor_.header.stamp = time;
-}
-
 RoombaSensors Roomba::getSensorState() const {
+  boost::mutex::scoped_lock(sensor_mutex_);
   return sensor_;
-}
-
-void Roomba::setTravelDistance(short dist) {
-  boost::mutex::scoped_lock(sensor_mutex_);
-  sensor_.travel.distance = dist;
-}
-
-void Roomba::setTravelAngle(short angle) {
-  boost::mutex::scoped_lock(sensor_mutex_);
-  sensor_.travel.angle = angle;
 }
 
 float Roomba::getCtrlLinearX() {
@@ -242,18 +281,6 @@ float Roomba::getCtrlLinearX() {
 
 float Roomba::getCtrlAngleZ() {
   return ctrl_.cntl.angular.z;
-}
-
-int Roomba::dEncoderRight(int max_delta) {
-  d_enc_count_r_ = std::max(-max_delta, d_enc_count_r_);
-  d_enc_count_r_ = std::min(max_delta, d_enc_count_r_);
-  return d_enc_count_r_;
-};
-
-int Roomba::dEncoderLeft(int max_delta) {
-  d_enc_count_l_ = std::max(-max_delta, d_enc_count_l_);
-  d_enc_count_l_ = std::min(max_delta, d_enc_count_l_);
-  return d_enc_count_l_;
 }
 
 void Roomba::sendCtrl(const roomba_500driver_meiji::RoombaCtrlConstPtr& msg) {
@@ -406,116 +433,4 @@ void Roomba::convertState(const uint8 raw_sensor[80], RoombaSensors &sensor) {
   sensor.motor_current.side_brush         = *((int16*) (raw_sensor + 77));
   // Stasis
   sensor.stasis                           =  raw_sensor[79];
-
-  // Update internal encoder counts
-  if(std::abs((int)sensor.encoder_counts.right - (int)enc_count_r_) >= 60000) {
-    if(sensor.encoder_counts.right > enc_count_r_)
-      d_enc_count_r_ = -65535 - enc_count_r_ + sensor.encoder_counts.right;
-    else
-      d_enc_count_r_ = 65535 - enc_count_r_ + sensor.encoder_counts.right;
-  } else {
-    d_enc_count_r_ = sensor.encoder_counts.right - enc_count_r_;
-  }
-
-  if(std::abs((int)sensor.encoder_counts.left - (int)enc_count_l_) >= 60000) {
-    if(sensor.encoder_counts.left > enc_count_l_)
-      d_enc_count_l_ = -65535-enc_count_l_+sensor.encoder_counts.left;
-    else
-      d_enc_count_l_ = 65535-enc_count_l_+sensor.encoder_counts.left;
-  } else {
-    d_enc_count_l_ = sensor.encoder_counts.left - enc_count_l_;
-  }
-
-  enc_count_r_ = sensor.encoder_counts.right;
-  enc_count_l_ = sensor.encoder_counts.left;
-}
-
-void Roomba::printSensorState() {
-  cout << "\n\n-------------------" << endl
-       << "Bumps:\n  "
-       << (sensor_.bumps_wheeldrops.bump_right ? "Right, " : "       ")
-       << (sensor_.bumps_wheeldrops.bump_left  ? "Left" : "") << endl
-       << "Wheeldrops:\n "
-       << (sensor_.bumps_wheeldrops.wheeldrop_right ? "Right, " : "       ")
-       << (sensor_.bumps_wheeldrops.wheeldrop_left  ? "Left" : "") << endl
-       << "Wall:\n  "
-       << (sensor_.wall.wall ? "Wall, " : "      ")
-       << (sensor_.wall.vwall ? "Virtual Wall" : "") << endl
-       << "Cliff:\n  "
-       << (sensor_.cliff.left ? "Left, " : "")
-       << (sensor_.cliff.front_left ? "Front Left, " : "")
-       << (sensor_.cliff.right ? "Right, " : "")
-       << (sensor_.cliff.front_right ? "Front Right " : "") << endl
-       << "Wheel Overcurrent:\n  "
-       << (sensor_.wheel_overcurrents.side_brush ? "Side Brush, " : "")
-       << (sensor_.wheel_overcurrents.main_brush ? "Main Brush, " : "")
-       << (sensor_.wheel_overcurrents.right_wheel ? "Right Wheel, " : "")
-       << (sensor_.wheel_overcurrents.left_wheel ? "Left Wheel" : "") << endl
-       << "Dirt Detection:  " << (int)sensor_.dirt_detect << endl
-       << "IR Character:"
-       << "\n  Right: " << (int)sensor_.ir_opcodes.right
-       << "\n  Left: "  << (int)sensor_.ir_opcodes.left
-       << "\n  Omni: "  << (int)sensor_.ir_opcodes.omni << endl
-       << "Buttons:\n  "
-       << (sensor_.button.clean    ? "Clean, " : "")
-       << (sensor_.button.spot     ? "Spot, " : "")
-       << (sensor_.button.dock     ? "Dock, " : "")
-       << (sensor_.button.minute   ? "Minute, " : "")
-       << (sensor_.button.hour     ? "Hour, " : "")
-       << (sensor_.button.day      ? "Day, " : "")
-       << (sensor_.button.clock    ? "Clock, " : "")
-       << (sensor_.button.schedule ? "Schedule" : "") << endl
-       << "Traveled (From the last acquisition.):"
-       << "\n  Distance: " << sensor_.travel.distance << " [mm]"
-       << "\n  Angle: " << sensor_.travel.angle << " [rad]" << endl
-       << "Battery:"
-       << "\n  Charging State: " << (uint)sensor_.battery.charging_state
-       << "\n  Voltage: " << sensor_.battery.voltage
-       << "\n  Current: " << sensor_.battery.current
-       << "\n  Temperature: " << (int) sensor_.battery.temperature
-       << "\n  Ramains: "
-       << sensor_.battery.charge << " / " << sensor_.battery.capacity
-       << " (" << 100.0f * sensor_.battery.charge / sensor_.battery.capacity << "[%])"
-       << endl
-       << "Charge Source:\n  "
-       << (sensor_.charging_source.home_base ? "Home Base, " : "")
-       << (sensor_.charging_source.internal_charger ? "Internal Charger." : "")
-       << endl
-       << "OI Mode : " << (int)sensor_.oi_mode << endl
-       << "Song:"
-       << "\n  Numer:   " << (int)sensor_.song.number
-       << "\n  Playing: " << (int)sensor_.song.playing << endl
-       << "Request:"
-       << "\n  Velocity: " << sensor_.request.velocity
-       << "\n  Radius: " << sensor_.request.radius
-       << "\n  Right Velocity: " << sensor_.request.right_velocity
-       << "\n  Left Velocity: " << sensor_.request.left_velocity << endl
-       << "Encoder Count:"
-       << "\n  L / R: " << sensor_.encoder_counts.right
-       << " / " << sensor_.encoder_counts.left << endl
-       << "Light Bumper: "
-       << "\n  Left:         "
-       << (sensor_.light_bumper.left ? "    Hit" : "Not Hit")
-       << ", (" << sensor_.light_bumper.left_signal << ")"
-       << "\n  Right:        "
-       << (sensor_.light_bumper.right ? "    Hit" : "Not Hit")
-       << ", (" << sensor_.light_bumper.right_signal << ")"
-       << "\n  Front Left:   "
-       << (sensor_.light_bumper.front_left ? "    Hit" : "Not Hit")
-       << ", (" << sensor_.light_bumper.front_left_signal << ")"
-       << "\n  Front Right:  "
-       << (sensor_.light_bumper.front_right ? "    Hit" : "Not Hit")
-       << ", (" << sensor_.light_bumper.front_right_signal << ")"
-       << "\n  Center Left:  "
-       << (sensor_.light_bumper.center_left ? "    Hit" : "Not Hit")
-       << ", (" << sensor_.light_bumper.center_left_signal << ")"
-       << "\n  Center Right: "
-       << (sensor_.light_bumper.center_right ? "    Hit" : "Not Hit")
-       << ", (" << sensor_.light_bumper.center_right_signal << ")" << endl
-       << "Motor Current:"
-       << "\n  Left Wheel: " << sensor_.motor_current.left_wheel
-       << "\n  Right Wheel: " << sensor_.motor_current.right_wheel
-       << "\n  Main Brush: " << sensor_.motor_current.main_brush
-       << "\n  Side Brush: " << sensor_.motor_current.side_brush << endl
-       << "Stasis: " << (sensor_.stasis ? "Forward" : "Not Forward") << endl;
 }
