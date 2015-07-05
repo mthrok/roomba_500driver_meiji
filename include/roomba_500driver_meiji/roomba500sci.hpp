@@ -48,7 +48,7 @@ public:
 #include "roombaC2_types.hpp"
 
 #include <roomba_500driver_meiji/RoombaCtrl.h>
-#include <roomba_500driver_meiji/RoombaState.h>
+#include <roomba_500driver_meiji/RoombaSensors.h>
 
 typedef unsigned short uint16;
 typedef unsigned char uint8;
@@ -62,10 +62,10 @@ namespace roombaC2 {
   class Roomba {
     Serial* comm_;
     roomba_500driver_meiji::RoombaCtrl ctrl_;
-    roomba_500driver_meiji::RoombaState state_;
+    roomba_500driver_meiji::RoombaSensors sensor_;
 
     boost::mutex ctrl_mutex_;
-    boost::mutex state_mutex_;
+    boost::mutex sensor_mutex_;
 
     unsigned int enc_count_l_;
     unsigned int enc_count_r_;
@@ -74,8 +74,8 @@ namespace roombaC2 {
     int d_pre_enc_l_;
     int d_pre_enc_r_;
 
-    void convertState(const uint8 raw_state[80],
-		      roomba_500driver_meiji::RoombaState &state);
+    void convertState(const uint8 raw_sensors[80],
+		      roomba_500driver_meiji::RoombaSensors &sensors);
 
   public:
     Roomba();
@@ -110,7 +110,7 @@ namespace roombaC2 {
     void sendOpCode(roombaC2::OPCODE, const uint8 *dataBytes=NULL, uint nDataBytes=0);
     void updateSensorState();
     void setTimestamp(ros::Time time);
-    roomba_500driver_meiji::RoombaState getSensorState() const;
+    roomba_500driver_meiji::RoombaSensors getSensorState() const;
     void printSensorState();
 
     void setTravelDistance(short dist);

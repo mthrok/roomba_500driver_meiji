@@ -19,7 +19,7 @@
 #include "ros/ros.h"
 
 #include "roomba_500driver_meiji/roomba500sci.hpp"
-#include <roomba_500driver_meiji/RoombaState.h>
+#include <roomba_500driver_meiji/RoombaSensors.h>
 #include <roomba_500driver_meiji/RoombaCtrl.h>
 
 #include <tf/transform_broadcaster.h>
@@ -31,7 +31,7 @@
 
 using namespace std;
 
-typedef roomba_500driver_meiji::RoombaState RoombaState;
+typedef roomba_500driver_meiji::RoombaSensors RoombaSensors;
 typedef roomba_500driver_meiji::RoombaCtrl RoombaCtrl;
 
 double normalizeRad(double rad) {
@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
   ros::init(argc, argv, "roomba_driver");
   ros::NodeHandle n;
   ros::Subscriber cntl_sub = n.subscribe("/roomba/control", 100, &roombaC2::Roomba::sendCtrl, &roomba);
-  ros::Publisher pub_state = n.advertise<RoombaState>("/roomba/states", 100);
+  ros::Publisher pub_state = n.advertise<RoombaSensors>("/roomba/sensors", 100);
 
   tf::TransformBroadcaster odom_broadcaster;
   ros::Publisher pub_odo= n.advertise<nav_msgs::Odometry >("/roomba/odometry", 100);
