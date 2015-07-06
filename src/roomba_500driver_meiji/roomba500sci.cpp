@@ -160,60 +160,67 @@ int Roomba::dEncoderLeft(int max_delta) {
 
 void Roomba::updateRoombaState() {
   // TODO : Move these constants to header
-  // These values are for iRobot Create2
-  float nTicks = 508.8;
+  // These values are used to compute the travel distance and angle manually,
+  // since the internal distance/angle value returned by roomba wrong.
+  // https://robotics.stackexchange.com/questions/7062/create2-angle-packet-id-20
+  float nTicks = 508.8; // per revolution.
   float wheel_base = 235.0; // [mm]
   float wheel_diameter = 72.00; // [mm]
-  float conv_const = M_PI * wheel_diameter / nTicks / 4.4;
+  float conv_const = M_PI * wheel_diameter / nTicks;
+  // Further, my Create2's nTicks is as documentation says, so here is a magic.
+  conv_const /= 4.4;
 
-  // TODO: Remove trailing under socres
-  int enc_count_l_;
-  int enc_count_r_;
-  int d_enc_count_l_;
-  int d_enc_count_r_;
-  int d_pre_enc_l_;
-  int d_pre_enc_r_;
+  int enc_count_l;
+  int enc_count_r;
+  int d_enc_count_l;
+  int d_enc_count_r;
 
-  float total_angle = 0.0, total_distance = 0.0;
+  float x = 0.0, y = 0.0, theta = 0.0;
   while(!stopStateManager_) {
     sleep_for_sec(0.05);
 
     // Store the current encoder counts
-    enc_count_l_ = sensor_.encoder_counts.left;
-    enc_count_r_ = sensor_.encoder_counts.right;
+    enc_count_l = sensor_.encoder_counts.left;
+    enc_count_r = sensor_.encoder_counts.right;
     // Update sensor values
     updateSensorState();
-    // Compute the diff of encoder counts. (Compensate for encoder count jump.)
-    d_enc_count_l_ = (int)sensor_.encoder_counts.left - enc_count_l_;
-    d_enc_count_r_ = (int)sensor_.encoder_counts.right - enc_count_r_;
-    if(std::abs(d_enc_count_l_) >= 50000) {
-      if(sensor_.encoder_counts.left > enc_count_l_)
-	d_enc_count_l_ -= 65535;
+    // Since travel dist/angle returned by Roomba is incorrect,
+    // we manually compute them.
+    // 1. Compute the diff of encoder counts. (Compensate for encoder count roollover.)
+    d_enc_count_l = (int)sensor_.encoder_counts.left - enc_count_l;
+    d_enc_count_r = (int)sensor_.encoder_counts.right - enc_count_r;
+    if(std::abs(d_enc_count_l) >= 50000) {
+      if(sensor_.encoder_counts.left > enc_count_l)
+	d_enc_count_l -= 65535;
       else
-	d_enc_count_l_ += 65535;
+	d_enc_count_l += 65535;
     }
-    if(std::abs(d_enc_count_r_) >= 50000) {
-      if(sensor_.encoder_counts.right > enc_count_r_)
-	d_enc_count_r_ -= 65535;
+    if(std::abs(d_enc_count_r) >= 50000) {
+      if(sensor_.encoder_counts.right > enc_count_r)
+	d_enc_count_r -= 65535;
       else
-	d_enc_count_r_ += 65535;
+	d_enc_count_r += 65535;
     }
-    // TODO : Check if maxnorm constrain is needed.
+    // 2. Comvert encoder count to distance [mm]
+    float dist_l = conv_const * d_enc_count_l;
+    float dist_r = conv_const * d_enc_count_r;
+    // 3. Compute distance and angle
+    float distance = (dist_r + dist_l) / 2.0; // [mm]
+    float angle    = (dist_r - dist_l) / wheel_base; // [rad]
+    sensor_.travel.distance = (uint16)distance;
+    sensor_.travel.angle = (uint16)angle;
 
-    // Compute the travel distance and angle manually, since
-    // internal distance/angle computation has bug
-    // https://robotics.stackexchange.com/questions/7062/create2-angle-packet-id-20
-    // 1. Comvert encoder count to distance [mm]
-    float dist_l = conv_const * d_enc_count_l_;
-    float dist_r = conv_const * d_enc_count_r_;
-    // 2. Compute distance and angle
-    float distance = (dist_r + dist_l) / 2.0;
-    float angle    = (dist_r - dist_l) / wheel_base;
+    // Update global status
+    theta += angle;
+    while (theta > 180)
+      theta -= 360;
+    while (theta < -180)
+      theta += 360;
 
-    total_angle += angle;
-    total_distance += distance;
+    x += distance * cos(theta);
+    y += distance * sin(theta);
     printf("%8d/%8d, %12.5f, %12.5f, %12.5f, %12.5f\n",
-	   sensor_.encoder_counts.left, sensor_.encoder_counts.right, distance, angle, total_distance, total_angle);
+	   sensor_.encoder_counts.left, sensor_.encoder_counts.right, distance, angle, x, y);
 
   }
 }
