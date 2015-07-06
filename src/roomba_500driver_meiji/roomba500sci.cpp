@@ -167,12 +167,14 @@ void Roomba::updateRoombaState() {
   float conv_const = M_PI * wheel_diameter / nTicks;
 
   // TODO: Remove trailing under socres
-  unsigned int enc_count_l_;
-  unsigned int enc_count_r_;
+  int enc_count_l_;
+  int enc_count_r_;
   int d_enc_count_l_;
   int d_enc_count_r_;
   int d_pre_enc_l_;
   int d_pre_enc_r_;
+
+  float total_angle = 0.0, total_distance = 0.0;
   while(!stopStateManager_) {
     sleep_for_sec(0.05);
 
@@ -207,8 +209,11 @@ void Roomba::updateRoombaState() {
     // 2. Compute distance and angle
     float distance = (dist_r + dist_l) / 2.0;
     float angle    = (dist_r - dist_l) / wheel_base;
-    printf("Enc L/R, Travel distance [mm/s], angle[deg/s]: %8d/%8d, %12.5f, %12.5f\n",
-	   sensor_.encoder_counts.left, sensor_.encoder_counts.right, distance, angle);
+
+    total_angle += angle / 1600;
+    total_distance += distance;
+    printf("%8d/%8d, %12.5f, %12.5f, %12.5f, %12.5f\n",
+	   sensor_.encoder_counts.left, sensor_.encoder_counts.right, distance, angle, total_distance, total_angle);
 
   }
 }
@@ -436,8 +441,8 @@ void Roomba::convertState(const uint8 raw_sensor[80], RoombaSensors &sensor) {
   sensor.request.right_velocity           = *((int16*) (raw_sensor + 48));
   sensor.request.left_velocity            = *((int16*) (raw_sensor + 50));
   // Encoder counts
-  sensor.encoder_counts.left              = *((uint16*) (raw_sensor + 52));
-  sensor.encoder_counts.right             = *((uint16*) (raw_sensor + 54));
+  sensor.encoder_counts.left              = *((int16*) (raw_sensor + 52));
+  sensor.encoder_counts.right             = *((int16*) (raw_sensor + 54));
   // Light Bumper
   sensor.light_bumper.left                = (raw_sensor[56] & LT_BUMPER_LEFT);
   sensor.light_bumper.front_left          = (raw_sensor[56] & LT_BUMPER_FRONT_LEFT);
