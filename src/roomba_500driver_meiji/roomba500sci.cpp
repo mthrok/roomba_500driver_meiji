@@ -164,7 +164,7 @@ void Roomba::updateRoombaState() {
   float nTicks = 508.8;
   float wheel_base = 235.0; // [mm]
   float wheel_diameter = 72.00; // [mm]
-  float conv_const = M_PI * wheel_diameter / nTicks;
+  float conv_const = M_PI * wheel_diameter / nTicks / 4.4;
 
   // TODO: Remove trailing under socres
   int enc_count_l_;
@@ -210,7 +210,7 @@ void Roomba::updateRoombaState() {
     float distance = (dist_r + dist_l) / 2.0;
     float angle    = (dist_r - dist_l) / wheel_base;
 
-    total_angle += angle / 1600;
+    total_angle += angle;
     total_distance += distance;
     printf("%8d/%8d, %12.5f, %12.5f, %12.5f, %12.5f\n",
 	   sensor_.encoder_counts.left, sensor_.encoder_counts.right, distance, angle, total_distance, total_angle);
