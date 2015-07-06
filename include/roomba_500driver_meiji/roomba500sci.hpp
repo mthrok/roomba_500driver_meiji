@@ -44,6 +44,10 @@ namespace roombaC2 {
     boost::mutex ctrl_mutex_;
     boost::mutex sensor_mutex_;
 
+    // Global status
+    float x_, y_, theta_;
+    boost::mutex status_mutex_;
+
     // For state managing
     boost::atomic<bool> stopStateManager_;
     boost::thread stateManager_;
