@@ -17,13 +17,11 @@
 //-----------------------------------------------------------------------------
 
 #include "roomba_500driver_meiji/roomba500sci.hpp"
-
-#include <stdio.h>
-#include <cmath>
-#include <string>
-#include <unistd.h>
 #include <stdexcept>
-
+#include <unistd.h>
+#include <string>
+#include <cmath>
+#include <stdio.h>
 using namespace roombaC2;
 using namespace std;
 
@@ -35,9 +33,13 @@ void sleep_for_sec (float sec){
   usleep(usec);
 }
 
-// TODO Add other member variables to initalization list
 Roomba::Roomba()
-  : stopStateManager_(true)
+  : comm_(NULL)
+  , ctrl_()
+  , sensor_()
+  , ctrl_mutex_()
+  , sensor_mutex_()
+  , stopStateManager_(true)
   , stateManager_()
 {}
 
@@ -52,83 +54,168 @@ Roomba::~Roomba() {
 void Roomba::init(int baud, const char* dev) {
   comm_ = new Serial(baud, dev, 80, 0);
   sleep(1);
-  startStateUpdater();
+  startStateManager();
 };
 
-void Roomba::sendOpCode(OPCODE oc, const uint8* dataBytes,
-			uint nDataBytes) const{
+void Roomba::sendOpCode(OPCODE oc, const uint8* dataBytes, uint nDataBytes) {
   // Concatenate operation code and databytes
   uint nMsg = nDataBytes + 1;
   uint8 *message = new uint8[nMsg];
   message[0] = (uint8)oc;
-  if (dataBytes)
-    memcpy(message+1, dataBytes, nDataBytes);
+  memcpy(message+1, dataBytes, nDataBytes);
   // Send message
   if (nMsg != comm_ -> write(message, nMsg)) {
-    //std::string err_msg(__func__); err_msg += ":Failed to send command.";
-    //throw std::runtime_error(err_msg.c_str());
+    std::string err_msg(__func__); err_msg += ":Failed to send command.";
+    throw std::runtime_error(err_msg.c_str());
   }
   sleep_for_sec(COMMAND_WAIT);
 }
 
-
-void Roomba::updateState() {
-  while(!stopStateManager_) {
-    // Retreive sensor values
-    updateSensorState();
-    printf("Encoder count L/R: %8d / %8d\n", sensor_.encoder_counts.left, sensor_.encoder_counts.right);
-    float distance = sensor_.travel.distance / 1000.0;
-    uint16 angle = sensor_.travel.angle;
-    printf("Distance Traveled: %8.3f [m]/ %8d [deg]\n", distance, angle);
-
-  /*
-  // Update internal encoder counts
-  if(std::abs((int)sensor.encoder_counts.right - (int)enc_count_r_) >= 60000) {
-    if(sensor.encoder_counts.right > enc_count_r_)
-      d_enc_count_r_ = -65535 - enc_count_r_ + sensor.encoder_counts.right;
-    else
-      d_enc_count_r_ = 65535 - enc_count_r_ + sensor.encoder_counts.right;
-  } else {
-    d_enc_count_r_ = sensor.encoder_counts.right - enc_count_r_;
-  }
-
-  if(std::abs((int)sensor.encoder_counts.left - (int)enc_count_l_) >= 60000) {
-    if(sensor.encoder_counts.left > enc_count_l_)
-      d_enc_count_l_ = -65535-enc_count_l_+sensor.encoder_counts.left;
-    else
-      d_enc_count_l_ = 65535-enc_count_l_+sensor.encoder_counts.left;
-  } else {
-    d_enc_count_l_ = sensor.encoder_counts.left - enc_count_l_;
-  }
-
-  enc_count_r_ = sensor.encoder_counts.right;
-  enc_count_l_ = sensor.encoder_counts.left;
-  */
-
-
-
-    /*
-    // Correct encoder values
-    int enc_r = dEncoderRight();
-    int enc_l = dEncoderLeft();
-    if(abs(enc_r) == 200)
-      enc_r = pre_enc_r;
-    if(abs(enc_l) == 200)
-      enc_l = pre_enc_l;
-
-    float distance = ((float)enc_r + enc_l) / 2270.0 * 0.5;
-    float angle = ((float)enc_r - enc_l) / 2270.0 / 0.235;
-    sens.travel.distance = distance;
-    sens.travel.angle = angle;
-    */
-    //
-    sleep_for_sec(1.0 / 10);
+void Roomba::sendCtrl(const roomba_500driver_meiji::RoombaCtrlConstPtr& msg) {
+  boost::mutex::scoped_lock(ctrl_mutex_);
+  ctrl_ = *msg;
+  switch(msg->mode){
+  case roomba_500driver_meiji::RoombaCtrl::SPOT:
+    spot();
+    break;
+  case roomba_500driver_meiji::RoombaCtrl::SAFE:
+    safe();
+    break;
+  case roomba_500driver_meiji::RoombaCtrl::CLEAN:
+    clean();
+    break;
+  case roomba_500driver_meiji::RoombaCtrl::POWER:
+    powerOff();
+    break;
+  case roomba_500driver_meiji::RoombaCtrl::WAKEUP:
+    wakeup();
+    startup();
+    break;
+  case roomba_500driver_meiji::RoombaCtrl::FULL:
+    full();
+    break;
+  case roomba_500driver_meiji::RoombaCtrl::MAX:
+    max();
+    break;
+  case roomba_500driver_meiji::RoombaCtrl::DOCK:
+    dock();
+    break;
+  case roomba_500driver_meiji::RoombaCtrl::MOTORS:
+    setMotorState((roombaC2::MOTOR_STATE_BITS)
+		  (roombaC2::MB_MAIN_BRUSH |
+		   roombaC2::MB_SIDE_BRUSH |
+		   roombaC2::MB_VACUUM));
+    break;
+  case roomba_500driver_meiji::RoombaCtrl::MOTORS_OFF:
+    setMotorState((roombaC2::MOTOR_STATE_BITS)(0));
+    break;
+  case roomba_500driver_meiji::RoombaCtrl::DRIVE_DIRECT:
+    driveDirect(msg->cntl.linear.x, msg->cntl.angular.z);
+    break;
+  case roomba_500driver_meiji::RoombaCtrl::DRIVE_PWM:
+    drivePWM(msg->r_pwm, msg->l_pwm);
+    break;
+  case roomba_500driver_meiji::RoombaCtrl::SONG:
+    safe();
+    song(1,1);
+    playing(1);
+    break;
+  case roomba_500driver_meiji::RoombaCtrl::DRIVE:
+  default:
+    drive(msg->velocity, msg->radius);
   }
 }
 
-void Roomba::startStateUpdater() {
+void Roomba::updateSensorState() {
+  boost::mutex::scoped_lock(sensor_mutex_);
+  uint8 raw_state[80];
+
+  uint8 dataByte = ALL_PACKET;
+  sendOpCode(OC_SENSORS, &dataByte, 1);
+  if (80 == (comm_ -> read(raw_state, 80))) {
+    convertState(raw_state, sensor_);
+  } else {
+    //std::string err_msg(__func__); err_msg += ":Failed to receive sensor state.";
+    //throw std::runtime_error(err_msg.c_str());
+  }
+}
+
+int Roomba::dEncoderRight(int max_delta) {
+  /*
+  d_enc_count_r_ = std::max(-max_delta, d_enc_count_r_);
+  d_enc_count_r_ = std::min(max_delta, d_enc_count_r_);
+  return d_enc_count_r_;
+  */
+  return 0;
+};
+
+int Roomba::dEncoderLeft(int max_delta) {
+  /*
+  d_enc_count_l_ = std::max(-max_delta, d_enc_count_l_);
+  d_enc_count_l_ = std::min(max_delta, d_enc_count_l_);
+  return d_enc_count_l_;
+  */
+  return 0;
+}
+
+void Roomba::updateRoombaState() {
+  // TODO : Move these constants to header
+  // These values are for iRobot Create2
+  float nTicks = 508.8;
+  float wheel_base = 235.0; // [mm]
+  float wheel_diameter = 72.00; // [mm]
+  float conv_const = M_PI * wheel_diameter / nTicks;
+
+  // TODO: Remove trailing under socres
+  unsigned int enc_count_l_;
+  unsigned int enc_count_r_;
+  int d_enc_count_l_;
+  int d_enc_count_r_;
+  int d_pre_enc_l_;
+  int d_pre_enc_r_;
+  while(!stopStateManager_) {
+    sleep_for_sec(0.05);
+
+    // Store the current encoder counts
+    enc_count_l_ = sensor_.encoder_counts.left;
+    enc_count_r_ = sensor_.encoder_counts.right;
+    // Update sensor values
+    updateSensorState();
+    // Compute the diff of encoder counts. (Compensate for encoder count jump.)
+    d_enc_count_l_ = (int)sensor_.encoder_counts.left - enc_count_l_;
+    d_enc_count_r_ = (int)sensor_.encoder_counts.right - enc_count_r_;
+    if(std::abs(d_enc_count_l_) >= 50000) {
+      if(sensor_.encoder_counts.left > enc_count_l_)
+	d_enc_count_l_ -= 65535;
+      else
+	d_enc_count_l_ += 65535;
+    }
+    if(std::abs(d_enc_count_r_) >= 50000) {
+      if(sensor_.encoder_counts.right > enc_count_r_)
+	d_enc_count_r_ -= 65535;
+      else
+	d_enc_count_r_ += 65535;
+    }
+    // TODO : Check if maxnorm constrain is needed.
+
+    // Compute the travel distance and angle manually, since
+    // internal distance/angle computation has bug
+    // https://robotics.stackexchange.com/questions/7062/create2-angle-packet-id-20
+    // 1. Comvert encoder count to distance [mm]
+    float dist_l = conv_const * d_enc_count_l_;
+    float dist_r = conv_const * d_enc_count_r_;
+    // 2. Compute distance and angle
+    float distance = (dist_r + dist_l) / 2.0;
+    float angle    = (dist_r - dist_l) / wheel_base;
+    printf("Enc L/R, Travel distance [mm/s], angle[deg/s]: %8d/%8d, %12.5f, %12.5f\n",
+	   sensor_.encoder_counts.left, sensor_.encoder_counts.right, distance, angle);
+
+  }
+}
+
+void Roomba::startStateManager() {
   stopStateManager_ = false;
-  stateManager_ = boost::thread(&Roomba::updateState, this);
+  stateManager_ = boost::thread(&Roomba::updateRoombaState, this);
 }
 
 void Roomba::wakeup(void) {
@@ -255,24 +342,18 @@ void Roomba::playing(int song_number) {
   sleep_for_sec(COMMAND_WAIT);
 }
 
-void Roomba::updateSensorState() {
-  boost::mutex::scoped_lock(sensor_mutex_);
-  uint8 raw_state[80];
-
-  uint8 dataByte = ALL_PACKET;
-  sendOpCode(OC_SENSORS, &dataByte, 1);
-  int res = comm_ -> read(raw_state, 80);
-  if (80 == res) {
-    convertState(raw_state, sensor_);
-  } else {
-    //std::string err_msg(__func__); err_msg += ":Failed to receive sensor state.";
-    //throw std::runtime_error(err_msg.c_str());
-  }
+RoombaSensors Roomba::getSensorState() const {
+  return sensor_;
 }
 
-RoombaSensors Roomba::getSensorState() const {
+void Roomba::setTravelDistance(short dist) {
   boost::mutex::scoped_lock(sensor_mutex_);
-  return sensor_;
+  sensor_.travel.distance = dist;
+}
+
+void Roomba::setTravelAngle(short angle) {
+  boost::mutex::scoped_lock(sensor_mutex_);
+  sensor_.travel.angle = angle;
 }
 
 float Roomba::getCtrlLinearX() {
@@ -281,61 +362,6 @@ float Roomba::getCtrlLinearX() {
 
 float Roomba::getCtrlAngleZ() {
   return ctrl_.cntl.angular.z;
-}
-
-void Roomba::sendCtrl(const roomba_500driver_meiji::RoombaCtrlConstPtr& msg) {
-  boost::mutex::scoped_lock(ctrl_mutex_);
-  ctrl_ = *msg;
-  switch(msg->mode){
-  case roomba_500driver_meiji::RoombaCtrl::SPOT:
-    spot();
-    break;
-  case roomba_500driver_meiji::RoombaCtrl::SAFE:
-    safe();
-    break;
-  case roomba_500driver_meiji::RoombaCtrl::CLEAN:
-    clean();
-    break;
-  case roomba_500driver_meiji::RoombaCtrl::POWER:
-    powerOff();
-    break;
-  case roomba_500driver_meiji::RoombaCtrl::WAKEUP:
-    wakeup();
-    startup();
-    break;
-  case roomba_500driver_meiji::RoombaCtrl::FULL:
-    full();
-    break;
-  case roomba_500driver_meiji::RoombaCtrl::MAX:
-    max();
-    break;
-  case roomba_500driver_meiji::RoombaCtrl::DOCK:
-    dock();
-    break;
-  case roomba_500driver_meiji::RoombaCtrl::MOTORS:
-    setMotorState((roombaC2::MOTOR_STATE_BITS)
-		  (roombaC2::MB_MAIN_BRUSH |
-		   roombaC2::MB_SIDE_BRUSH |
-		   roombaC2::MB_VACUUM));
-    break;
-  case roomba_500driver_meiji::RoombaCtrl::MOTORS_OFF:
-    setMotorState((roombaC2::MOTOR_STATE_BITS)(0));
-    break;
-  case roomba_500driver_meiji::RoombaCtrl::DRIVE_DIRECT:
-    driveDirect(msg->cntl.linear.x, msg->cntl.angular.z);
-    break;
-  case roomba_500driver_meiji::RoombaCtrl::DRIVE_PWM:
-    drivePWM(msg->r_pwm, msg->l_pwm);
-    break;
-  case roomba_500driver_meiji::RoombaCtrl::SONG:
-    safe();
-    song(1,1);
-    playing(1);
-    break;
-  case roomba_500driver_meiji::RoombaCtrl::DRIVE:
-  default:
-    drive(msg->velocity, msg->radius);
-  }
 }
 
 void Roomba::convertState(const uint8 raw_sensor[80], RoombaSensors &sensor) {

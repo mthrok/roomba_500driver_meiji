@@ -34,7 +34,7 @@ using namespace std;
 typedef roomba_500driver_meiji::RoombaSensors RoombaSensors;
 typedef roomba_500driver_meiji::RoombaCtrl RoombaCtrl;
 
-void printSensorState(const RoombaSensors &sens) {
+void printSensorState(RoombaSensors sens) {
   cout << "\n\n-------------------" << endl
        << "Bumps:\n  "
        << (sens.bumps_wheeldrops.bump_right ? "Right, " : "       ")
@@ -93,7 +93,7 @@ void printSensorState(const RoombaSensors &sens) {
        << "\n  Velocity: " << sens.request.velocity
        << "\n  Radius: " << sens.request.radius
        << "\n  Right Velocity: " << sens.request.right_velocity
-       << "\n   Left Velocity: " << sens.request.left_velocity << endl
+       << "\n  Left Velocity: " << sens.request.left_velocity << endl
        << "Encoder Count:"
        << "\n  L / R: " << sens.encoder_counts.right
        << " / " << sens.encoder_counts.left << endl
@@ -124,6 +124,7 @@ void printSensorState(const RoombaSensors &sens) {
        << "Stasis: " << (sens.stasis ? "Forward" : "Not Forward") << endl;
 }
 
+
 double normalizeRad(double rad) {
   double ret=rad;
   if(rad>M_PI)
@@ -133,8 +134,8 @@ double normalizeRad(double rad) {
   return ret;
 }
 
-void calcOdometry (const geometry_msgs::Pose2D& pre_x,
-		   geometry_msgs::Pose2D& x,
+void calcOdometry (geometry_msgs::Pose2D& x,
+		   const geometry_msgs::Pose2D& pre_x,
 		   float dist,
 		   float angle) {
   x.theta=pre_x.theta+angle;
@@ -152,10 +153,9 @@ int main(int argc, char** argv) {
   ros::init(argc, argv, "roomba_driver");
   ros::NodeHandle hNode;
   tf::TransformBroadcaster odom_broadcaster;
-
   ros::Subscriber sub_ctrl = hNode.subscribe("/roomba/control", 100, &roombaC2::Roomba::sendCtrl, &roomba);
-  ros::Publisher pub_state = hNode.advertise<RoombaSensors>("/roomba/sensors", 60);
-  ros::Publisher pub_odo = hNode.advertise<nav_msgs::Odometry >("/roomba/odometry", 60);
+  ros::Publisher pub_state = hNode.advertise<RoombaSensors>("/roomba/sensors", 100);
+  ros::Publisher pub_odo = hNode.advertise<nav_msgs::Odometry >("/roomba/odometry", 100);
   ros::Rate loop_rate(10); // should not set this rate more than 20Hz !
 
   geometry_msgs::Pose2D pose;
@@ -166,14 +166,26 @@ int main(int argc, char** argv) {
   ros::Time current_time, last_time;
   current_time = ros::Time::now();
   while (ros::ok()) {
-    roomba_500driver_meiji::RoombaSensors sens = roomba.getSensorState();
+    RoombaSensors sens = roomba.getSensorState();
     sens.header.stamp = ros::Time::now();
     //printSensorState(sens);
-
-    pub_state.publish(sens);
     /*
+    int enc_r = roomba.dEncoderRight();
+    int enc_l = roomba.dEncoderLeft();
+    if(abs(enc_r) == 200)
+      enc_r = pre_enc_r;
+    if(abs(enc_l) == 200)
+      enc_l = pre_enc_l;
+
     geometry_msgs::Pose2D pre = pose;
-    calcOdometry(pre, pose, sens.travel.distance, travel.angle);
+    float distance = ((float)enc_r + enc_l) / 2270.0 * 0.5;
+    float angle    = ((float)enc_r - enc_l) / 2270.0 / 0.235;
+    roomba.setTravelDistance(distance);
+    roomba.setTravelAngle(angle);
+
+    pub_state.publish(roomba.getSensorState());
+
+    calcOdometry(pose, pre, distance, angle);
     pre_enc_r=roomba.dEncoderRight();
     pre_enc_l=roomba.dEncoderLeft();
 
@@ -207,8 +219,8 @@ int main(int argc, char** argv) {
     odom.twist.twist.linear.y = 0;
     odom.twist.twist.angular.z = roomba.getCtrlAngleZ();
     pub_odo.publish(odom);
-
     */
+
     ros::spinOnce();
     loop_rate.sleep();
   }

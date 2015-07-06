@@ -19,14 +19,13 @@
 #ifndef _ROOMBASCI_H
 #define _ROOMBASCI_H
 
-#include "serial.hpp"
-#include "roombaC2_types.hpp"
-
-#include <roomba_500driver_meiji/RoombaCtrl.h>
 #include <roomba_500driver_meiji/RoombaSensors.h>
+#include <roomba_500driver_meiji/RoombaCtrl.h>
+#include "roombaC2_types.hpp"
+#include "serial.hpp"
 
+#include <boost/thread.hpp>
 #include <boost/atomic.hpp>
-#include <boost/thread/thread.hpp>
 
 typedef unsigned short uint16;
 typedef unsigned char uint8;
@@ -34,7 +33,7 @@ typedef signed short int16;
 typedef signed char int8;
 
 const float COMMAND_WAIT = 0.01;    // [sec], this time is for Roomba 500 series
-const int16 DEFAULT_VELOCITY = 20; // [mm/s]
+const int16 DEFAULT_VELOCITY = 200; // [mm/s]
 
 namespace roombaC2 {
   class Roomba {
@@ -45,29 +44,25 @@ namespace roombaC2 {
     boost::mutex ctrl_mutex_;
     boost::mutex sensor_mutex_;
 
-    void convertState(const uint8 raw_sensors[80],
-		      roomba_500driver_meiji::RoombaSensors &sensors);
-
-    // State manager
+    // For state managing
     boost::atomic<bool> stopStateManager_;
     boost::thread stateManager_;
 
-    int dEncoderRight(int max_delta=200);
-    int dEncoderLeft(int max_delta=200);
-
-    void startStateUpdater();
+    void startStateManager();
     void updateSensorState();
-    void updateState();
+    void updateRoombaState();
 
+    void convertState(const uint8 raw_sensors[80],
+		      roomba_500driver_meiji::RoombaSensors &sensors);
   public:
     Roomba();
     ~Roomba();
 
     void init(int baud=B115200, const char* dev="/dev/ttyUSB0");
 
-    roomba_500driver_meiji::RoombaSensors getSensorState() const;
-
-    void sendOpCode(roombaC2::OPCODE, const uint8 *dataBytes=NULL, uint nDataBytes=0) const;
+    void sendOpCode(roombaC2::OPCODE opcode,
+		    const uint8 *dataBytes=NULL, uint nDataBytes=0);
+    void sendCtrl(const roomba_500driver_meiji::RoombaCtrlConstPtr& msg);
 
     void wakeup();
     void startup();
@@ -93,15 +88,19 @@ namespace roombaC2 {
     int16 velToPWMLeft(float velocity);
     float velToPWM(float velocity);
 
+    roomba_500driver_meiji::RoombaSensors getSensorState() const;
+    void printSensorState();
 
-
-
-
+    void setTravelDistance(short dist);
+    void setTravelAngle(short angle);
 
     float getCtrlLinearX();
     float getCtrlAngleZ();
 
-    void sendCtrl(const roomba_500driver_meiji::RoombaCtrlConstPtr& msg);
+    int dEncoderRight(int max_delta=200);
+    int dEncoderLeft(int max_delta=200);
+
+
   }; // class Roomba
 }; // namespace roombaC2
 #endif	// _ROOMBASCI_H
