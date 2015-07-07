@@ -175,9 +175,6 @@ void Roomba::updateRoombaState() {
   float wheel_base = 235.0; // [mm]
   float wheel_diameter = 72.00; // [mm]
   float conv_const = M_PI * wheel_diameter / nTicks;
-  // Further, my Create2's nTicks is as documentation says, so here is a magic.
-  float angle_coeff = 1.0 / 4.4;
-  float dist_coeff = 0.0046;
 
   int enc_count_l;
   int enc_count_r;
@@ -213,10 +210,10 @@ void Roomba::updateRoombaState() {
     float dist_l = conv_const * d_enc_count_l;
     float dist_r = conv_const * d_enc_count_r;
     // 3. Compute distance and angle
-    float distance = (dist_r + dist_l) / 2.0 * dist_coeff; // [mm]
-    float angle    = (dist_r - dist_l) / wheel_base * angle_coeff; // [rad]
-    sensor_.travel.distance = (uint16)distance;
-    sensor_.travel.angle = (uint16)angle;
+    float distance = (dist_r + dist_l) / 2.0; // [mm]
+    float angle    = (dist_r - dist_l) / wheel_base; // [deg]
+    sensor_.travel.distance = (int16)distance;
+    sensor_.travel.angle = (int16)angle;
 
     // Update global status
     {
@@ -228,8 +225,10 @@ void Roomba::updateRoombaState() {
 	theta_ -= 360.0;
       while (theta_ < -180)
 	theta_ += 360.0;
-      printf("%8d, %8d, %12.5f, %12.5f, %12.5f, %12.5f, %12.5f\n",
-	     d_enc_count_l, d_enc_count_r, distance, angle, x_/1000.0, y_/1000.0, theta_);
+      /*
+	printf("%8d, %8d, %12.5f, %12.5f, %12.5f, %12.5f, %12.5f\n",
+	     d_enc_count_l, d_enc_count_r, distance, angle, x_/1000.0, y_/1000.0, 180.0*theta_/M_PI);
+      */
     }
   }
 }
@@ -385,6 +384,14 @@ float Roomba::getCtrlAngleZ() {
   return ctrl_.cntl.angular.z;
 }
 
+uint16 convertUShort(const uint8 packet1, const uint8 packet2) {
+  return (uint16)((packet1<<8)|packet2);
+}
+
+int16 convertShort(const uint8 packet1, const uint8 packet2) {
+  return (int16)((packet1<<8)|packet2);
+}
+
 void Roomba::convertState(const uint8 raw_sensor[80], RoombaSensors &sensor) {
   // Bumps and Wheel Drops
   sensor.bumps_wheeldrops.bump_right      = (raw_sensor[0] & BUMP_RIGHT);
@@ -423,22 +430,22 @@ void Roomba::convertState(const uint8 raw_sensor[80], RoombaSensors &sensor) {
   sensor.button.schedule                  = (raw_sensor[11] & BB_SCHEDULE);
   sensor.button.clock                     = (raw_sensor[11] & BB_CLOCK);
   // Traveled distance and angle
-  sensor.travel.distance                  = *((int16*) (raw_sensor + 12));
-  sensor.travel.angle                     = *((int16*) (raw_sensor + 14));
+  sensor.travel.distance                  = convertShort(raw_sensor[12], raw_sensor[13]);
+  sensor.travel.angle                     = convertShort(raw_sensor[14], raw_sensor[15]);
   // Battery Charging sensor, Voltage, Current, Temperature, Charge, Capacity
   sensor.battery.charging_state           = raw_sensor[16];
-  sensor.battery.voltage                  = *((uint16*) (raw_sensor + 17));
-  sensor.battery.current                  = *((int16*)  (raw_sensor + 19));
+  sensor.battery.voltage                  = convertUShort(raw_sensor[17], raw_sensor[18]);
+  sensor.battery.current                  = convertShort(raw_sensor[19], raw_sensor[20]);
   sensor.battery.temperature              = *((int8*)   (raw_sensor + 21));
-  sensor.battery.charge                   = *((uint16*) (raw_sensor + 22));
-  sensor.battery.capacity                 = *((uint16*) (raw_sensor + 24));
+  sensor.battery.charge                   = convertUShort(raw_sensor[22], raw_sensor[23]);
+  sensor.battery.capacity                 = convertUShort(raw_sensor[24], raw_sensor[25]);
   // Wall Signal Strength
-  sensor.wall.wall_signal                 = *((uint16*) (raw_sensor + 26));
+  sensor.wall.wall_signal                 = convertUShort(raw_sensor[26], raw_sensor[27]);
   // Cliff Signal Strength
-  sensor.cliff.left_signal                = *((uint16*) (raw_sensor + 28));
-  sensor.cliff.front_left_signal          = *((uint16*) (raw_sensor + 30));
-  sensor.cliff.front_right_signal         = *((uint16*) (raw_sensor + 32));
-  sensor.cliff.right_signal               = *((uint16*) (raw_sensor + 34));
+  sensor.cliff.left_signal                = convertUShort(raw_sensor[28], raw_sensor[29]);
+  sensor.cliff.front_left_signal          = convertUShort(raw_sensor[30], raw_sensor[31]);
+  sensor.cliff.front_right_signal         = convertUShort(raw_sensor[32], raw_sensor[33]);
+  sensor.cliff.right_signal               = convertUShort(raw_sensor[34], raw_sensor[35]);
   // Unused Byte
   // raw_sensor[36, 37, 38] is unused byte
   // Charging sources availability
@@ -452,13 +459,13 @@ void Roomba::convertState(const uint8 raw_sensor[80], RoombaSensors &sensor) {
   // #Stream raw_sensorets
   sensor.stream_packets                   = raw_sensor[43];
   // Requested Velocity and radius
-  sensor.request.velocity                 = *((int16*) (raw_sensor + 44));
-  sensor.request.radius                   = *((int16*) (raw_sensor + 46));
-  sensor.request.right_velocity           = *((int16*) (raw_sensor + 48));
-  sensor.request.left_velocity            = *((int16*) (raw_sensor + 50));
+  sensor.request.velocity                 = convertShort(raw_sensor[44], raw_sensor[45]);
+  sensor.request.radius                   = convertShort(raw_sensor[46], raw_sensor[47]);
+  sensor.request.right_velocity           = convertShort(raw_sensor[48], raw_sensor[49]);
+  sensor.request.left_velocity            = convertShort(raw_sensor[50], raw_sensor[51]);
   // Encoder counts
-  sensor.encoder_counts.left              = *((int16*) (raw_sensor + 52));
-  sensor.encoder_counts.right             = *((int16*) (raw_sensor + 54));
+  sensor.encoder_counts.left              = convertShort(raw_sensor[52], raw_sensor[53]);
+  sensor.encoder_counts.right             = convertShort(raw_sensor[54], raw_sensor[55]);
   // Light Bumper
   sensor.light_bumper.left                = (raw_sensor[56] & LT_BUMPER_LEFT);
   sensor.light_bumper.front_left          = (raw_sensor[56] & LT_BUMPER_FRONT_LEFT);
@@ -467,17 +474,17 @@ void Roomba::convertState(const uint8 raw_sensor[80], RoombaSensors &sensor) {
   sensor.light_bumper.front_right         = (raw_sensor[56] & LT_BUMPER_FRONT_RIGHT);
   sensor.light_bumper.right               = (raw_sensor[56] & LT_BUMPER_RIGHT);
   // Light Bumper Signal Strength
-  sensor.light_bumper.left_signal         = *((uint16*) (raw_sensor + 57));
-  sensor.light_bumper.front_left_signal   = *((uint16*) (raw_sensor + 59));
-  sensor.light_bumper.center_left_signal  = *((uint16*) (raw_sensor + 61));
-  sensor.light_bumper.center_right_signal = *((uint16*) (raw_sensor + 63));
-  sensor.light_bumper.front_right_signal  = *((uint16*) (raw_sensor + 65));
-  sensor.light_bumper.right_signal        = *((uint16*) (raw_sensor + 67));
+  sensor.light_bumper.left_signal         = convertUShort(raw_sensor[57], raw_sensor[58]);
+  sensor.light_bumper.front_left_signal   = convertUShort(raw_sensor[59], raw_sensor[60]);
+  sensor.light_bumper.center_left_signal  = convertUShort(raw_sensor[61], raw_sensor[62]);
+  sensor.light_bumper.center_right_signal = convertUShort(raw_sensor[63], raw_sensor[64]);
+  sensor.light_bumper.front_right_signal  = convertUShort(raw_sensor[65], raw_sensor[66]);
+  sensor.light_bumper.right_signal        = convertUShort(raw_sensor[67], raw_sensor[68]);
   // Motor Current
-  sensor.motor_current.left_wheel         = *((int16*) (raw_sensor + 71));
-  sensor.motor_current.right_wheel        = *((int16*) (raw_sensor + 73));
-  sensor.motor_current.main_brush         = *((int16*) (raw_sensor + 75));
-  sensor.motor_current.side_brush         = *((int16*) (raw_sensor + 77));
+  sensor.motor_current.left_wheel         = convertShort(raw_sensor[71], raw_sensor[72]);
+  sensor.motor_current.right_wheel        = convertShort(raw_sensor[73], raw_sensor[74]);
+  sensor.motor_current.main_brush         = convertShort(raw_sensor[75], raw_sensor[76]);
+  sensor.motor_current.side_brush         = convertShort(raw_sensor[77], raw_sensor[78]);
   // Stasis
   sensor.stasis                           =  raw_sensor[79];
 }

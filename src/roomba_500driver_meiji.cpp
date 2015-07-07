@@ -71,7 +71,7 @@ void printSensorState(RoombaSensors sens) {
        << (sens.button.schedule ? "Schedule" : "") << endl
        << "Traveled (From the last acquisition.):"
        << "\n  Distance: " << sens.travel.distance << " [mm]"
-       << "\n  Angle: " << sens.travel.angle << " [rad]" << endl
+       << "\n  Angle: " << sens.travel.angle << " [deg]" << endl
        << "Battery:"
        << "\n  Charging State: " << (uint)sens.battery.charging_state
        << "\n  Voltage: " << sens.battery.voltage
@@ -168,7 +168,7 @@ int main(int argc, char** argv) {
   while (ros::ok()) {
     RoombaSensors sens = roomba.getSensorState();
     sens.header.stamp = ros::Time::now();
-    //printSensorState(sens);
+    printSensorState(sens);
     /*
     int enc_r = roomba.dEncoderRight();
     int enc_l = roomba.dEncoderLeft();
