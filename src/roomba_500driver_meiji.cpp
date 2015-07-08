@@ -168,7 +168,7 @@ int main(int argc, char** argv) {
   while (ros::ok()) {
     RoombaSensors sens = roomba.getSensorState();
     sens.header.stamp = ros::Time::now();
-    printSensorState(sens);
+    // printSensorState(sens);
     /*
     int enc_r = roomba.dEncoderRight();
     int enc_l = roomba.dEncoderLeft();

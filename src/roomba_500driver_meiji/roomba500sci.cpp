@@ -33,6 +33,65 @@ void sleep_for_sec (float sec){
   usleep(usec);
 }
 
+void State::setXY(const float x, const float y) {
+  boost::mutex::scoped_lock(state_mutex_);
+  x_ = x; y_ = y;
+}
+
+void State::setTheta(const float theta) {
+  boost::mutex::scoped_lock(state_mutex_);
+  theta_ = theta;
+}
+
+void State::setVW(const float v, const float w) {
+  boost::mutex::scoped_lock(state_mutex_);
+  v_ = v; w_ = w;
+}
+
+float State::getX() const {
+  boost::mutex::scoped_lock(state_mutex_);
+  return x_;
+}
+
+float State::getY() const {
+  boost::mutex::scoped_lock(state_mutex_);
+  return y_;
+}
+
+float State::getTheta() const {
+  boost::mutex::scoped_lock(state_mutex_);
+  return theta_;
+}
+
+float State::getV() const {
+  boost::mutex::scoped_lock(state_mutex_);
+  return v_;
+}
+
+float State::getW() const {
+  boost::mutex::scoped_lock(state_mutex_);
+  return w_;
+}
+
+void State::updatePose(const float distance, const float angle) {
+  boost::mutex::scoped_lock(state_mutex_);
+  theta_ += angle;
+  x_ += distance * cos(theta_);
+  y_ += distance * sin(theta_);
+
+  /*
+    while (theta_ > M_PI)
+    theta_ -= 2 * M_PI;
+    while (theta_ < M_PI)
+    theta_ += 2 * M_PI;
+  */
+}
+
+void State::updateSpeed(const float v, const float w) {
+  boost::mutex::scoped_lock(state_mutex_);
+  v_ = v;  w_ = w;
+}
+
 Roomba::Roomba()
   : comm_(NULL)
   , ctrl_()
@@ -41,9 +100,8 @@ Roomba::Roomba()
   , sensor_mutex_()
   , stopStateManager_(true)
   , stateManager_()
-  , x_(0.0)
-  , y_(0.0)
-  , theta_(0.0)
+  , currentState_()
+  , requestState_()
 {}
 
 Roomba::~Roomba() {
@@ -113,8 +171,8 @@ void Roomba::sendCtrl(const roomba_500driver_meiji::RoombaCtrlConstPtr& msg) {
     setMotorState((roombaC2::MOTOR_STATE_BITS)(0));
     // temporary
     {
-      boost::mutex::scoped_lock(status_mutex_);
-      x_ = y_ = theta_ = 0.0;
+      currentState_.setXY(0.0, 0.0);
+      currentState_.setTheta(0.0);
     }
     break;
   case roomba_500driver_meiji::RoombaCtrl::DRIVE_DIRECT:
@@ -167,69 +225,74 @@ int Roomba::dEncoderLeft(int max_delta) {
 }
 
 void Roomba::updateRoombaState() {
-  // TODO : Move these constants to header
-  // These values are used to compute the travel distance and angle manually,
-  // since the internal distance/angle value returned by roomba wrong.
-  // https://robotics.stackexchange.com/questions/7062/create2-angle-packet-id-20
-  float nTicks = 508.8; // per revolution.
-  float wheel_base = 235.0; // [mm]
-  float wheel_diameter = 72.00; // [mm]
-  float conv_const = M_PI * wheel_diameter / nTicks;
-
-  int enc_count_l;
-  int enc_count_r;
-  int d_enc_count_l;
-  int d_enc_count_r;
-
+  float updateHz = 10.0;
+  int enc_l = 0;
+  int enc_r = 0;
+  int d_enc_l = 0;
+  int d_enc_r = 0;
+  int d_enc_l_prev = 0;
+  int d_enc_r_prev = 0;
+  float conv_const = M_PI * WHEEL_DIAMETER / N_TICKS;
   while(!stopStateManager_) {
-    sleep_for_sec(0.05);
+    sleep_for_sec(1 / updateHz);
 
     // Store the current encoder counts
-    enc_count_l = sensor_.encoder_counts.left;
-    enc_count_r = sensor_.encoder_counts.right;
+    enc_l = sensor_.encoder_counts.left;
+    enc_r = sensor_.encoder_counts.right;
     // Update sensor values
     updateSensorState();
     // Since travel dist/angle returned by Roomba is incorrect,
     // we manually compute them.
     // 1. Compute the diff of encoder counts. (Compensate for encoder count roollover.)
-    d_enc_count_l = (int)sensor_.encoder_counts.left - enc_count_l;
-    d_enc_count_r = (int)sensor_.encoder_counts.right - enc_count_r;
-    if(std::abs(d_enc_count_l) >= 50000) {
-      if(sensor_.encoder_counts.left > enc_count_l)
-	d_enc_count_l -= 65535;
+    d_enc_l = (int)sensor_.encoder_counts.left - enc_l;
+    d_enc_r = (int)sensor_.encoder_counts.right - enc_r;
+    if(std::abs(d_enc_l) >= 60000) {
+      printf("Encoder jumped L!\n");
+      if(sensor_.encoder_counts.left > enc_l)
+	d_enc_l -= 65535;
       else
-	d_enc_count_l += 65535;
+	d_enc_l += 65535;
     }
-    if(std::abs(d_enc_count_r) >= 50000) {
-      if(sensor_.encoder_counts.right > enc_count_r)
-	d_enc_count_r -= 65535;
+    if(std::abs(d_enc_r) >= 60000) {
+      printf("Encoder jumped R!\n");
+      if(sensor_.encoder_counts.right > enc_r)
+	d_enc_r -= 65535;
       else
-	d_enc_count_r += 65535;
+	d_enc_r += 65535;
     }
+    if (std::abs(d_enc_r) > 170) {
+      printf("Abnormal value detected R!\n");
+      d_enc_r = d_enc_r_prev;
+    }
+    if (std::abs(d_enc_l) > 170) {
+      printf("Abnormal value detected L!\n");
+      d_enc_l = d_enc_l_prev;
+    }
+    d_enc_l_prev = d_enc_l;
+    d_enc_r_prev = d_enc_r;
     // 2. Comvert encoder count to distance [mm]
-    float dist_l = conv_const * d_enc_count_l;
-    float dist_r = conv_const * d_enc_count_r;
+    float dist_l = conv_const * d_enc_l;
+    float dist_r = conv_const * d_enc_r;
     // 3. Compute distance and angle
-    float distance = (dist_r + dist_l) / 2.0; // [mm]
-    float angle    = (dist_r - dist_l) / wheel_base; // [deg]
+    float distance = (dist_r + dist_l) / 2.0;         // [mm]
+    float angle = (dist_r - dist_l) / WHEEL_BASE; // [rad]
+    // 4. Set computed value
     sensor_.travel.distance = (int16)distance;
-    sensor_.travel.angle = (int16)angle;
+    sensor_.travel.angle = (int16)(180.0 * angle / M_PI);
 
     // Update global status
-    {
-      boost::mutex::scoped_lock(status_mutex_);
-      x_ += distance * cos(M_PI * theta_ / 180.0);
-      y_ += distance * sin(M_PI * theta_ / 180.0);
-      theta_ += angle;
-      while (theta_ > 180)
-	theta_ -= 360.0;
-      while (theta_ < -180)
-	theta_ += 360.0;
-      /*
-	printf("%8d, %8d, %12.5f, %12.5f, %12.5f, %12.5f, %12.5f\n",
-	     d_enc_count_l, d_enc_count_r, distance, angle, x_/1000.0, y_/1000.0, 180.0*theta_/M_PI);
-      */
-    }
+    currentState_.updatePose(distance, angle);
+    currentState_.updateSpeed(distance * updateHz, angle * updateHz);
+    printf("%8d, %8d, %8d, %8d, %12.5f, %12.5f, %12.5f, %12.5f, %12.5f. %12.5f, %12.5f\n",
+	   sensor_.encoder_counts.left, sensor_.encoder_counts.right,
+	   d_enc_l, d_enc_r, distance, angle,
+	   currentState_.getX(), currentState_.getY(), currentState_.getTheta(),
+	   currentState_.getV(), currentState_.getW());
+    /*
+    printf("%12.5f/%12.5f, %12.5f/%12.5f\n",
+	   currentState_.getV(), requestState_.getV(),
+	   currentState_.getW(), requestState_.getW());
+    */
   }
 }
 
@@ -250,77 +313,53 @@ void Roomba::startup(void) {
   sendOpCode(OC_CONTROL);
 }
 
-void Roomba::powerOff() {
-  sendOpCode(OC_POWER);
-  sleep_for_sec(COMMAND_WAIT);
-}
+void Roomba::powerOff() { sendOpCode(OC_POWER); }
 
-void Roomba::clean() {
-  sendOpCode(OC_CLEAN);
-  sleep_for_sec(COMMAND_WAIT);
-}
+void Roomba::clean() { sendOpCode(OC_CLEAN); }
 
-void Roomba::safe() {
-  sendOpCode(OC_SAFE);
-  sleep_for_sec(COMMAND_WAIT);
-}
+void Roomba::safe() { sendOpCode(OC_SAFE); }
 
-void Roomba::full() {
-  sendOpCode(OC_FULL);
-  sleep_for_sec(COMMAND_WAIT);
-}
+void Roomba::full() { sendOpCode(OC_FULL); }
 
-void Roomba::spot() {
-  sendOpCode(OC_SPOT);
-  sleep_for_sec(COMMAND_WAIT);
-}
+void Roomba::spot() { sendOpCode(OC_SPOT); }
 
-void Roomba::max() {
-  sendOpCode(OC_MAX);
-  sleep_for_sec(COMMAND_WAIT);
-}
+void Roomba::max() { sendOpCode(OC_MAX); }
 
 void Roomba::dock() {
-  const uint8 seq[] = {OC_BUTTONS, BB_DOCK};
-  comm_ -> write(seq,2);
-  sleep_for_sec(COMMAND_WAIT);
+  const uint8 data = BB_DOCK;
+  sendOpCode(OC_BUTTONS, &data, 1);
 }
 
-void Roomba::setMotorState(MOTOR_STATE_BITS state) {
-  const uint8 seq[] = {OC_MOTORS, state};
-  comm_ -> write(seq,2);
-  sleep_for_sec(COMMAND_WAIT);
+void Roomba::setMotorState(const uint8 state) {
+  sendOpCode(OC_MOTORS, &state, 1);
 }
 
 void Roomba::seekDock() {
-  const uint8 seq[] = {OC_SEEK_DOCK};
-  comm_ -> write(seq,1);
-  sleep_for_sec(COMMAND_WAIT);
+  sendOpCode(OC_SEEK_DOCK);
 }
 
 void Roomba::drive(short velocity, short radius) {
-  uint8 vhi = (uint8)(velocity >> 8);
-  uint8 vlo = (uint8)(velocity & 0xff);
-  uint8 rhi = (uint8)(radius >> 8);
-  uint8 rlo = (uint8)(radius & 0xff);
-
-  const uint8 seq[] = {OC_DRIVE, vhi, vlo, rhi, rlo};
-  comm_ -> write(seq, 5);
-  sleep_for_sec(COMMAND_WAIT);
+  uint8 data[4] = {(uint8)(velocity >> 8),
+		   (uint8)(velocity & 0xff),
+		   (uint8)(radius >> 8),
+		   (uint8)(radius & 0xff)};
+  sendOpCode(OC_DRIVE, data, 4);
 }
 
 void Roomba::driveDirect(float velocity, float yawrate) {
-  short right = 1000 * (velocity + 0.5 * 0.235 * yawrate);
-  short left = 1000 * (velocity - 0.5 * 0.235 * yawrate);
+  // velocity and yawrate is in normalized scale.
+  velocity *= 1000;  // [mm/s]
+  yawrate *= M_PI; // [rad/s]
+  requestState_.updateSpeed(velocity, yawrate);
+  yawrate *= WHEEL_BASE; // [mm/s]
+  short left = velocity - 0.5 * yawrate;
+  short right = velocity + 0.5 * yawrate;
 
-  uint8 rhi = (uint8)(right >> 8);
-  uint8 rlo = (uint8)(right & 0xff);
-  uint8 lhi = (uint8)(left  >> 8);
-  uint8 llo = (uint8)(left  & 0xff);
-
-  const uint8 seq[] = {OC_DRIVE_DIRECT, rhi, rlo, lhi, llo};
-  comm_ -> write(seq, 5);
-  sleep_for_sec(COMMAND_WAIT);
+  uint8 data[4] = {(uint8)(right >> 8),
+		   (uint8)(right & 0xff),
+		   (uint8)(left  >> 8),
+		   (uint8)(left  & 0xff)};
+  sendOpCode(OC_DRIVE_DIRECT, data, 4);
 }
 
 void Roomba::drivePWM(int right_pwm, int left_pwm) {
