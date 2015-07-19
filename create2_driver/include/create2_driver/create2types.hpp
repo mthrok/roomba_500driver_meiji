@@ -1,7 +1,7 @@
 #ifndef CREATE2_DRIVER_CREATE2TYPES_HPP_
 #define CREATE2_DRIVER_CREATE2TYPES_HPP_
 
-namespace roombaC2 {
+namespace create2 {
   // Refer to
   // [1]
   // "iRobot® Create® 2 Open Interface (OI) Specification based on the
@@ -351,6 +351,6 @@ namespace roombaC2 {
     OCB_RIGHT_WHEEL = 0x04,
     OCB_LEFT_WHEEL  = 0x08
   };
-};
+}; // namespace create2
 
 #endif // CREATE2_DRIVER_CREATE2TYPES_HPP_

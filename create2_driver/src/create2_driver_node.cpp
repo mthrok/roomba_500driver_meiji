@@ -145,7 +145,7 @@ void calcOdometry (geometry_msgs::Pose2D& x,
 }
 
 int main(int argc, char** argv) {
-  roombaC2::Roomba roomba;
+  create2::Roomba roomba;
   roomba.init(B115200,"/dev/ttyUSB0");
   roomba.wakeup();
   roomba.startup();
@@ -153,7 +153,7 @@ int main(int argc, char** argv) {
   ros::init(argc, argv, "roomba_driver");
   ros::NodeHandle hNode;
   tf::TransformBroadcaster odom_broadcaster;
-  ros::Subscriber sub_ctrl = hNode.subscribe("/roomba/control", 100, &roombaC2::Roomba::sendCtrl, &roomba);
+  ros::Subscriber sub_ctrl = hNode.subscribe("/roomba/control", 100, &create2::Roomba::sendCtrl, &roomba);
   ros::Publisher pub_state = hNode.advertise<RoombaSensors>("/roomba/sensors", 100);
   ros::Publisher pub_odo = hNode.advertise<nav_msgs::Odometry >("/roomba/odometry", 100);
   ros::Rate loop_rate(10); // should not set this rate more than 20Hz !

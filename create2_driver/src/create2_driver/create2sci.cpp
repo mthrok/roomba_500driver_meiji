@@ -4,7 +4,7 @@
 #include <string>
 #include <cmath>
 #include <stdio.h>
-using namespace roombaC2;
+using namespace create2;
 using namespace std;
 
 typedef create2_msgs::RoombaSensors RoombaSensors;
@@ -144,13 +144,13 @@ void Roomba::sendCtrl(const create2_msgs::RoombaCtrlConstPtr& msg) {
     dock();
     break;
   case create2_msgs::RoombaCtrl::MOTORS:
-    setMotorState((roombaC2::MOTOR_STATE_BITS)
-		  (roombaC2::MB_MAIN_BRUSH |
-		   roombaC2::MB_SIDE_BRUSH |
-		   roombaC2::MB_VACUUM));
+    setMotorState((MOTOR_STATE_BITS)
+		  (MB_MAIN_BRUSH |
+		   MB_SIDE_BRUSH |
+		   MB_VACUUM));
     break;
   case create2_msgs::RoombaCtrl::MOTORS_OFF:
-    setMotorState((roombaC2::MOTOR_STATE_BITS)(0));
+    setMotorState((MOTOR_STATE_BITS)(0));
     // temporary
     {
       currentState_.setXY(0.0, 0.0);

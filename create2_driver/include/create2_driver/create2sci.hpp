@@ -15,7 +15,7 @@ typedef unsigned char uint8;
 typedef signed short int16;
 typedef signed char int8;
 
-namespace roombaC2 {
+namespace create2 {
   class State {
     float x_, y_, theta_, v_, w_;
     boost::mutex state_mutex_;
@@ -69,7 +69,7 @@ namespace roombaC2 {
 
     void init(int baud=B115200, const char* dev="/dev/ttyUSB0");
 
-    void sendOpCode(roombaC2::OPCODE opcode,
+    void sendOpCode(create2::OPCODE opcode,
 		    const uint8 *dataBytes=NULL, uint nDataBytes=0);
     void sendCtrl(const create2_msgs::RoombaCtrlConstPtr& msg);
 
@@ -109,7 +109,6 @@ namespace roombaC2 {
     int dEncoderRight(int max_delta=200);
     int dEncoderLeft(int max_delta=200);
 
-
   }; // class Roomba
-}; // namespace roombaC2
+}; // namespace create2
 #endif	// CREATE2_DRIVER_CREATE2SCI_HPP_
