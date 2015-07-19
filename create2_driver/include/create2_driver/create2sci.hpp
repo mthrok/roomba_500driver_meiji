@@ -16,6 +16,15 @@ typedef signed short int16;
 typedef signed char int8;
 
 namespace create2 {
+  const float COMMAND_WAIT = 0.01;  // [sec]
+  // These values are specific to iRobot Create2.
+  // They are used to compute the travel distance and angle manually,
+  // since the internal distance/angle value returned by roomba wrong.
+  // https://robotics.stackexchange.com/questions/7062/create2-angle-packet-id-20
+  const float N_TICKS        = 508.8; // per revolution.
+  const float WHEEL_BASE     = 235.0; // [mm]
+  const float WHEEL_DIAMETER = 72.00; // [mm]
+
   class State {
     float x_, y_, theta_, v_, w_;
     boost::mutex state_mutex_;
@@ -32,15 +41,6 @@ namespace create2 {
     void updateSpeed(const float v, const float w);
   };
 
-  // These values are specific to iRobot Create2.
-  // They are used to compute the travel distance and angle manually,
-  // since the internal distance/angle value returned by roomba wrong.
-  // https://robotics.stackexchange.com/questions/7062/create2-angle-packet-id-20
-  const float N_TICKS        = 508.8; // per revolution.
-  const float WHEEL_BASE     = 235.0; // [mm]
-  const float WHEEL_DIAMETER = 72.00; // [mm]
-
-  const float COMMAND_WAIT = 0.01; // [sec]
   class Roomba {
     Serial* comm_;
     create2_msgs::RoombaCtrl ctrl_;
@@ -90,24 +90,11 @@ namespace create2 {
     void drivePWM(int right_pwm,int left_pwm);
     void driveDirect(float velocity, float yawrate);
 
-    void song(int song_number, int song_length);
-    void playing(int song_number);
-
     int16 velToPWMRight(float velocity);
     int16 velToPWMLeft(float velocity);
     float velToPWM(float velocity);
 
     create2_msgs::RoombaSensors getSensorState() const;
-    void printSensorState();
-
-    void setTravelDistance(short dist);
-    void setTravelAngle(short angle);
-
-    float getCtrlLinearX();
-    float getCtrlAngleZ();
-
-    int dEncoderRight(int max_delta=200);
-    int dEncoderLeft(int max_delta=200);
 
   }; // class Roomba
 }; // namespace create2
