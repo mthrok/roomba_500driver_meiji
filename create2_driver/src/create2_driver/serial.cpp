@@ -1,21 +1,3 @@
-//---------------------------< /-/ AMSL /-/ >------------------------------
-/**
- * file         :       serial.cpp
- *
- *
- * Environment  :       g++
- * Latest Update:       2011/05/07
- *
- * Designer(s)  :       y.nishikawa (AMSL)
- * Author(s)    :       y.nishikawa (AMSL)
- *
- * CopyRight    :       2011, Autonomous Mobile Systems Laboratory, Meiji Univ.
- *
- * Revision     :       2011/05/07
- *
- */
-//-----------------------------------------------------------------------------
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
@@ -26,7 +8,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "roomba_500driver_meiji/serial.hpp"
+#include "create2_driver/serial.hpp"
 
 #include <iostream>
 using namespace std;

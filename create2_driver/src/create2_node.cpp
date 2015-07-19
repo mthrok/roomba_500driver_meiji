@@ -18,9 +18,9 @@
 
 #include "ros/ros.h"
 
-#include "roomba_500driver_meiji/roomba500sci.hpp"
-#include <roomba_500driver_meiji/RoombaSensors.h>
-#include <roomba_500driver_meiji/RoombaCtrl.h>
+#include "create2_driver/create2sci.hpp"
+#include <create2_msgs/RoombaSensors.h>
+#include <create2_msgs/RoombaCtrl.h>
 
 #include <tf/transform_broadcaster.h>
 #include <geometry_msgs/Pose2D.h>
@@ -31,8 +31,8 @@
 
 using namespace std;
 
-typedef roomba_500driver_meiji::RoombaSensors RoombaSensors;
-typedef roomba_500driver_meiji::RoombaCtrl RoombaCtrl;
+typedef create2_msgs::RoombaSensors RoombaSensors;
+typedef create2_msgs::RoombaCtrl    RoombaCtrl;
 
 void printSensorState(RoombaSensors sens) {
   cout << "\n\n-------------------" << endl

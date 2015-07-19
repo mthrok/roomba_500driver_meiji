@@ -1,27 +1,10 @@
-//---------------------------< /-/ AMSL /-/ >------------------------------
-/**
- * file         :       joystick_drive.cpp
- *
- *
- * Environment  :       g++
- * Latest Update:       2011/05/24
- *
- * Designer(s)  :       t.saitoh (AMSL)
- * Author(s)    :       m.mitsuhashi (AMSL)
- *
- * CopyRight    :       2011, Autonomous Mobile Systems Laboratory, Meiji Univ.
- *
- * Revision     :       2011/05/24
- *
- */
-//-----------------------------------------------------------------------------
 #include <cmath>
 #include <iostream>
 #include <ros/ros.h>
 #include <boost/thread.hpp>
 
 #include <sensor_msgs/Joy.h>
-#include <roomba_500driver_meiji/RoombaCtrl.h>
+#include <create2_msgs/RoombaCtrl.h>
 
 using namespace std;
 boost::mutex cntl_mutex_;
@@ -30,58 +13,58 @@ ros::Publisher pub_state;
 
 void joy_callback(const sensor_msgs::JoyConstPtr& msg){
   boost::mutex::scoped_lock(cntl_mutex_);
-  roomba_500driver_meiji::RoombaCtrl ctrl;
+  create2_msgs::RoombaCtrl ctrl;
 
-  ctrl.mode=roomba_500driver_meiji::RoombaCtrl::DRIVE;
+  ctrl.mode=create2_msgs::RoombaCtrl::DRIVE;
 
   if(msg->buttons[0]){
-    ctrl.mode=roomba_500driver_meiji::RoombaCtrl::SAFE;
+    ctrl.mode=create2_msgs::RoombaCtrl::SAFE;
     cout<<"SAFE mode"<<endl;
   }
 
   if(msg->buttons[1]){
-    ctrl.mode=roomba_500driver_meiji::RoombaCtrl::SPOT;
+    ctrl.mode=create2_msgs::RoombaCtrl::SPOT;
     cout<<"SPOT mode"<<endl;
   }
 
   if(msg->buttons[2]){
-    ctrl.mode=roomba_500driver_meiji::RoombaCtrl::CLEAN;
+    ctrl.mode=create2_msgs::RoombaCtrl::CLEAN;
     cout<<"CLEAN mode"<<endl;
   }
 
   if(msg->buttons[3]){
-    //ctrl.mode=roomba_500driver_meiji::RoombaCtrl::MAX;
+    //ctrl.mode=create2_msgs::RoombaCtrl::MAX;
     //cout<<"MAX mode"<<endl;
-    ctrl.mode=roomba_500driver_meiji::RoombaCtrl::DOCK;
+    ctrl.mode=create2_msgs::RoombaCtrl::DOCK;
     cout<<"DOCK mode"<<endl;
   }
 
   if(msg->buttons[4]){
-    ctrl.mode=roomba_500driver_meiji::RoombaCtrl::MOTORS;
+    ctrl.mode=create2_msgs::RoombaCtrl::MOTORS;
     cout<<"MOTORS mode"<<endl;
   }
   if(msg->buttons[6]){
-    ctrl.mode=roomba_500driver_meiji::RoombaCtrl::MOTORS_OFF;
+    ctrl.mode=create2_msgs::RoombaCtrl::MOTORS_OFF;
     cout<<"MOTORS OFF mode"<<endl;
 	}
   if(msg->buttons[5]){
-    ctrl.mode=roomba_500driver_meiji::RoombaCtrl::FORCE_SEEK_DOCK;
+    ctrl.mode=create2_msgs::RoombaCtrl::FORCE_SEEK_DOCK;
     cout<<"FORCE_SEEK_DOCK mode"<<endl;
   }
   if(msg->buttons[7]){
-    ctrl.mode=roomba_500driver_meiji::RoombaCtrl::FULL;
+    ctrl.mode=create2_msgs::RoombaCtrl::FULL;
     cout<<"FULL mode"<<endl;
   }
 
   if(msg->buttons[9]){	//for red controller
     //if(msg->buttons[10]){
-    ctrl.mode=roomba_500driver_meiji::RoombaCtrl::WAKEUP;
+    ctrl.mode=create2_msgs::RoombaCtrl::WAKEUP;
     cout<<"WAKEUP"<<endl;
   }
 
   if(msg->buttons[8]){	//for red
     //if(msg->buttons[11]){
-    ctrl.mode=roomba_500driver_meiji::RoombaCtrl::POWER;
+    ctrl.mode=create2_msgs::RoombaCtrl::POWER;
     cout<<"POWER OFF"<<endl;
   }
   /*
@@ -100,10 +83,10 @@ void joy_callback(const sensor_msgs::JoyConstPtr& msg){
     }
   */
   if(msg->axes[1] || msg->axes[2]){ //
-    ctrl.cntl.linear.x=0.002*roomba_500driver_meiji::RoombaCtrl::DEFAULT_VELOCITY*msg->axes[1];
+    ctrl.cntl.linear.x=0.002*create2_msgs::RoombaCtrl::DEFAULT_VELOCITY*msg->axes[1];
     ctrl.cntl.angular.z=(float)msg->axes[2];
 
-    ctrl.mode=roomba_500driver_meiji::RoombaCtrl::DRIVE_DIRECT;
+    ctrl.mode=create2_msgs::RoombaCtrl::DRIVE_DIRECT;
     //cout<<ctrl.velocity<<"   "<<ctrl.radius<<endl;
     cout<<ctrl.cntl.linear.x<<"   "<<ctrl.cntl.angular.z<<endl;
   }
@@ -115,7 +98,7 @@ int main(int argc, char** argv) {
     ros::init(argc, argv, "joystick_drive");
     ros::NodeHandle n;
 
-    pub_state=n.advertise<roomba_500driver_meiji::RoombaCtrl>("/roomba/control", 100);
+    pub_state=n.advertise<create2_msgs::RoombaCtrl>("/roomba/control", 100);
     ros::Subscriber cntl_sub = n.subscribe("/joy", 100, joy_callback);
 
     ros::spin();

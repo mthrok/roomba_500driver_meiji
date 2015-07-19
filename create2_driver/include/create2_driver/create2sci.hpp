@@ -1,27 +1,10 @@
-//---------------------------< /-/ AMSL /-/ >------------------------------
-/**
- * file         :       roomba500sci.h
- *
- *
- * Environment  :       g++
- * Latest Update:       2011/05/24
- *
- * Designer(s)  :       t.saitoh (AMSL)
- * Author(s)    :       m.mitsuhashi (AMSL)
- *
- * CopyRight    :       2011, Autonomous Mobile Systems Laboratory, Meiji Univ.
- *
- * Revision     :       2011/05/24
- *
- */
-//-----------------------------------------------------------------------------
+#ifndef CREATE2_DRIVER_CREATE2SCI_HPP_
+#define CREATE2_DRIVER_CREATE2SCI_HPP_
 
-#ifndef _ROOMBASCI_H
-#define _ROOMBASCI_H
+#include <create2_msgs/RoombaSensors.h>
+#include <create2_msgs/RoombaCtrl.h>
 
-#include <roomba_500driver_meiji/RoombaSensors.h>
-#include <roomba_500driver_meiji/RoombaCtrl.h>
-#include "roombaC2_types.hpp"
+#include "create2types.hpp"
 #include "serial.hpp"
 
 #include <boost/thread.hpp>
@@ -60,8 +43,8 @@ namespace roombaC2 {
   const float COMMAND_WAIT = 0.01; // [sec]
   class Roomba {
     Serial* comm_;
-    roomba_500driver_meiji::RoombaCtrl ctrl_;
-    roomba_500driver_meiji::RoombaSensors sensor_;
+    create2_msgs::RoombaCtrl ctrl_;
+    create2_msgs::RoombaSensors sensor_;
 
     boost::mutex ctrl_mutex_;
     boost::mutex sensor_mutex_;
@@ -79,7 +62,7 @@ namespace roombaC2 {
     void updateRoombaState();
 
     void convertState(const uint8 raw_sensors[80],
-		      roomba_500driver_meiji::RoombaSensors &sensors);
+		      create2_msgs::RoombaSensors &sensors);
   public:
     Roomba();
     ~Roomba();
@@ -88,7 +71,7 @@ namespace roombaC2 {
 
     void sendOpCode(roombaC2::OPCODE opcode,
 		    const uint8 *dataBytes=NULL, uint nDataBytes=0);
-    void sendCtrl(const roomba_500driver_meiji::RoombaCtrlConstPtr& msg);
+    void sendCtrl(const create2_msgs::RoombaCtrlConstPtr& msg);
 
     void wakeup();
     void startup();
@@ -114,7 +97,7 @@ namespace roombaC2 {
     int16 velToPWMLeft(float velocity);
     float velToPWM(float velocity);
 
-    roomba_500driver_meiji::RoombaSensors getSensorState() const;
+    create2_msgs::RoombaSensors getSensorState() const;
     void printSensorState();
 
     void setTravelDistance(short dist);
@@ -129,4 +112,4 @@ namespace roombaC2 {
 
   }; // class Roomba
 }; // namespace roombaC2
-#endif	// _ROOMBASCI_H
+#endif	// CREATE2_DRIVER_CREATE2SCI_HPP_

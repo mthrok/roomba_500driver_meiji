@@ -1,5 +1,5 @@
-#ifndef _ROOMBAC2_ROOMBAC2_TYPES_HPP
-#define _ROOMBAC2_ROOMBAC2_TYPES_HPP
+#ifndef CREATE2_DRIVER_CREATE2TYPES_HPP_
+#define CREATE2_DRIVER_CREATE2TYPES_HPP_
 
 namespace roombaC2 {
   // Refer to
@@ -353,4 +353,4 @@ namespace roombaC2 {
   };
 };
 
-#endif
+#endif // CREATE2_DRIVER_CREATE2TYPES_HPP_

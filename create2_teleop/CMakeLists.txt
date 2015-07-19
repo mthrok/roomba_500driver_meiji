@@ -1,16 +1,12 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(roomba_500driver_meiji)
+project(create2_teleop)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  message_generation
-  geometry_msgs
-  sensor_msgs
-  nav_msgs
-  roscpp
-  tf
+  create2_msgs
+  joy
 )
 
 ## System dependencies are found with CMake's conventions
@@ -47,25 +43,11 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-add_message_files(
-  FILES
-  Wall.msg
-  Song.msg
-  Cliff.msg
-  Button.msg
-  Travel.msg
-  Battery.msg
-  Request.msg
-  IR_Opcodes.msg
-  RoombaCtrl.msg
-  LightBumper.msg
-  MotorCurrent.msg
-  RoombaSensors.msg
-  EncoderCounts.msg
-  ChargingSource.msg
-  BumpsWheeldrops.msg
-  WheelOvercurrents.msg
-)
+# add_message_files(
+#   FILES
+#   Message1.msg
+#   Message2.msg
+# )
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -82,12 +64,10 @@ add_message_files(
 # )
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages(
-  DEPENDENCIES
-  nav_msgs
-  sensor_msgs
-  geometry_msgs
-)
+# generate_messages(
+#   DEPENDENCIES
+#   std_msgs  # Or other packages containing msgs
+# )
 
 ###################################
 ## catkin specific configuration ##
@@ -99,10 +79,10 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES roomba_500driver_meiji
-  CATKIN_DEPENDS geometry_msgs nav_msgs roscpp sensor_msgs tf message_runtime
-  DEPENDS system_lib
+#  INCLUDE_DIRS include
+#  LIBRARIES roomba_teleop_meiji
+#  CATKIN_DEPENDS joy roomba_500driver_meiji
+#  DEPENDS system_lib
 )
 
 ###########
@@ -113,28 +93,23 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
-  include
   ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
-add_library(roomba_500driver_meiji
-  src/${PROJECT_NAME}/roomba500sci.cpp
-  src/${PROJECT_NAME}/serial.cpp
-)
+# add_library(roomba_teleop_meiji
+#   src/${PROJECT_NAME}/roomba_teleop_meiji.cpp
+# )
 
 ## Declare a cpp executable
-add_executable(roomba_500driver_meiji_node src/roomba_500driver_meiji.cpp)
+add_executable(joystick_drive src/joystick_drive.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-add_dependencies(roomba_500driver_meiji
-  roomba_500driver_meiji_generate_messages_cpp
-)
+# add_dependencies(roomba_teleop_meiji_node roomba_teleop_meiji_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(roomba_500driver_meiji_node
-  roomba_500driver_meiji
+target_link_libraries(joystick_drive
   ${catkin_LIBRARIES}
 )
 
@@ -153,7 +128,7 @@ target_link_libraries(roomba_500driver_meiji_node
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS roomba_driver roomba_driver_node
+# install(TARGETS roomba_teleop_meiji roomba_teleop_meiji_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -178,7 +153,7 @@ target_link_libraries(roomba_500driver_meiji_node
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_roomba_driver.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_roomba_teleop_meiji.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

@@ -1,22 +1,4 @@
-//---------------------------< /-/ AMSL /-/ >------------------------------
-/**
- * file         :       roomba500sci.cpp
- *
- *
- * Environment  :       g++
- * Latest Update:       2011/05/24
- *
- * Designer(s)  :       t.saitoh (AMSL)
- * Author(s)    :       t.saitoh (AMSL)
- *
- * CopyRight    :       2011, Autonomous Mobile Systems Laboratory, Meiji Univ.
- *
- * Revision     :       2011/05/24
- *
- */
-//-----------------------------------------------------------------------------
-
-#include "roomba_500driver_meiji/roomba500sci.hpp"
+#include "create2_driver/create2sci.hpp"
 #include <stdexcept>
 #include <unistd.h>
 #include <string>
@@ -25,8 +7,8 @@
 using namespace roombaC2;
 using namespace std;
 
-typedef roomba_500driver_meiji::RoombaSensors RoombaSensors;
-typedef roomba_500driver_meiji::RoombaCtrl RoombaCtrl;
+typedef create2_msgs::RoombaSensors RoombaSensors;
+typedef create2_msgs::RoombaCtrl RoombaCtrl;
 
 void sleep_for_sec (float sec){
   long usec=(long)(sec*1000000);
@@ -132,42 +114,42 @@ void Roomba::sendOpCode(OPCODE oc, const uint8* dataBytes, uint nDataBytes) {
   sleep_for_sec(COMMAND_WAIT);
 }
 
-void Roomba::sendCtrl(const roomba_500driver_meiji::RoombaCtrlConstPtr& msg) {
+void Roomba::sendCtrl(const create2_msgs::RoombaCtrlConstPtr& msg) {
   boost::mutex::scoped_lock(ctrl_mutex_);
   ctrl_ = *msg;
   switch(msg->mode){
-  case roomba_500driver_meiji::RoombaCtrl::SPOT:
+  case create2_msgs::RoombaCtrl::SPOT:
     spot();
     break;
-  case roomba_500driver_meiji::RoombaCtrl::SAFE:
+  case create2_msgs::RoombaCtrl::SAFE:
     safe();
     break;
-  case roomba_500driver_meiji::RoombaCtrl::CLEAN:
+  case create2_msgs::RoombaCtrl::CLEAN:
     clean();
     break;
-  case roomba_500driver_meiji::RoombaCtrl::POWER:
+  case create2_msgs::RoombaCtrl::POWER:
     powerOff();
     break;
-  case roomba_500driver_meiji::RoombaCtrl::WAKEUP:
+  case create2_msgs::RoombaCtrl::WAKEUP:
     wakeup();
     startup();
     break;
-  case roomba_500driver_meiji::RoombaCtrl::FULL:
+  case create2_msgs::RoombaCtrl::FULL:
     full();
     break;
-  case roomba_500driver_meiji::RoombaCtrl::MAX:
+  case create2_msgs::RoombaCtrl::MAX:
     max();
     break;
-  case roomba_500driver_meiji::RoombaCtrl::DOCK:
+  case create2_msgs::RoombaCtrl::DOCK:
     dock();
     break;
-  case roomba_500driver_meiji::RoombaCtrl::MOTORS:
+  case create2_msgs::RoombaCtrl::MOTORS:
     setMotorState((roombaC2::MOTOR_STATE_BITS)
 		  (roombaC2::MB_MAIN_BRUSH |
 		   roombaC2::MB_SIDE_BRUSH |
 		   roombaC2::MB_VACUUM));
     break;
-  case roomba_500driver_meiji::RoombaCtrl::MOTORS_OFF:
+  case create2_msgs::RoombaCtrl::MOTORS_OFF:
     setMotorState((roombaC2::MOTOR_STATE_BITS)(0));
     // temporary
     {
@@ -175,18 +157,18 @@ void Roomba::sendCtrl(const roomba_500driver_meiji::RoombaCtrlConstPtr& msg) {
       currentState_.setTheta(0.0);
     }
     break;
-  case roomba_500driver_meiji::RoombaCtrl::DRIVE_DIRECT:
+  case create2_msgs::RoombaCtrl::DRIVE_DIRECT:
     driveDirect(msg->cntl.linear.x, msg->cntl.angular.z);
     break;
-  case roomba_500driver_meiji::RoombaCtrl::DRIVE_PWM:
+  case create2_msgs::RoombaCtrl::DRIVE_PWM:
     drivePWM(msg->r_pwm, msg->l_pwm);
     break;
-  case roomba_500driver_meiji::RoombaCtrl::SONG:
+  case create2_msgs::RoombaCtrl::SONG:
     safe();
     song(1,1);
     playing(1);
     break;
-  case roomba_500driver_meiji::RoombaCtrl::DRIVE:
+  case create2_msgs::RoombaCtrl::DRIVE:
   default:
     drive(msg->velocity, msg->radius);
   }

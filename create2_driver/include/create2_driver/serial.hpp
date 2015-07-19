@@ -1,23 +1,5 @@
-//---------------------------< /-/ AMSL /-/ >------------------------------
-/**
- * file         :       serial.h
- *
- *
- * Environment  :       g++
- * Latest Update:       2011/05/07
- *
- * Designer(s)  :       y.nishikawa (AMSL)
- * Author(s)    :       y.nishikawa (AMSL)
- *
- * CopyRight    :       2011, Autonomous Mobile Systems Laboratory, Meiji Univ.
- *
- * Revision     :       2011/05/07
- *
- */
-//-----------------------------------------------------------------------------
-
-#ifndef _SERIAL_H
-#define _SERIAL_H
+#ifndef CREATE2_DRIVER_SERIAL_HPP_
+#define CREATE2_DRIVER_SERIAL_HPP_
 
 #include <termios.h>
 
@@ -42,4 +24,4 @@ class Serial {
   void setRts(int);
 };
 
-#endif //_SERIAL_H
+#endif // CREATE2_DRIVER_SERIAL_HPP_
