@@ -17,6 +17,7 @@ typedef signed char int8;
 
 namespace create2 {
   const float COMMAND_WAIT = 0.01;  // [sec]
+
   // These values are specific to iRobot Create2.
   // They are used to compute the travel distance and angle manually,
   // since the internal distance/angle value returned by roomba wrong.

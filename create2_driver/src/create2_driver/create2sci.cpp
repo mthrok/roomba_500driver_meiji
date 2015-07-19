@@ -61,12 +61,10 @@ void State::updatePose(const float distance, const float angle) {
   x_ += distance * cos(theta_);
   y_ += distance * sin(theta_);
 
-  /*
-    while (theta_ > M_PI)
+  while (theta_ > M_PI)
     theta_ -= 2 * M_PI;
-    while (theta_ < M_PI)
+  while (theta_ < M_PI)
     theta_ += 2 * M_PI;
-  */
 }
 
 void State::updateSpeed(const float v, const float w) {
@@ -144,6 +142,8 @@ void Roomba::sendCtrl(const create2_msgs::RoombaCtrlConstPtr& msg) {
     break;
   case create2_msgs::RoombaCtrl::DOCK:
     dock();
+    break;
+  case create2_msgs::RoombaCtrl::SONG:
     break;
   case create2_msgs::RoombaCtrl::MOTORS:
     setMotorState((MOTOR_STATE_BITS)
