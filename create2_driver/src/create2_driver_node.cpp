@@ -119,8 +119,9 @@ int main(int argc, char** argv) {
 
   while (ros::ok()) {
     RoombaSensors sens = roomba.getSensorState();
+    printSensorState(sens);
     sens.header.stamp = ros::Time::now();
-
+    pub_state.publish(sens);
     ros::spinOnce();
     loop_rate.sleep();
   }
